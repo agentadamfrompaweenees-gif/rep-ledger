@@ -975,7 +975,7 @@ function vPack(){const all=getPool().map(poolCard),got=all.filter(c=>c.got).leng
 function vSettings(){return vPlan()+`<h2>การ์ด</h2>${forgeBox()}
   <div class="ex"><b>อัปโหลดรูปการ์ดทีละหลายรูป</b><div class="muted small">เลือกรูปทั้งหมดได้ในครั้งเดียว แอปจับคู่กับการ์ดจากชื่อไฟล์ เช่น Igniso_123.png, Pyroking_SAR_456.png</div>
   <label class="btn sm" style="text-align:center">${DRV_BUSY?'กำลังอัปโหลด...':'เลือกรูป'}<input type="file" id="bulkin" accept="image/*" multiple hidden ${DRV_BUSY?'disabled':''}></label><div class="small" id="drvst" aria-live="polite">${esc(DRV_MSG)}</div></div>
-  ${UID?'<button class="btn ghost sm" id="logout">ออกจากระบบ</button>':''}<div class="muted small" style="text-align:center">เวอร์ชัน 8</div>`}
+  ${UID?'<button class="btn ghost sm" id="logout">ออกจากระบบ</button>':''}<div class="ex"><b>Coin</b><div class="row between"><span class="num">🪙 ${(C.coins||0).toLocaleString()}</span><button class="btn ghost sm" id="coinzero">ตั้ง coin เป็น 0</button></div></div><div class="muted small" style="text-align:center">เวอร์ชัน 9</div>`}
 function vCards(){
   if(cardView==='pack')return vPack();
   const all=buildCards(), got=all.filter(c=>c.got).length;
@@ -1078,6 +1078,7 @@ app.addEventListener('click',e=>{
   else if(el=q('[data-card]')){const c=buildCards().find(x=>x.id===el.dataset.card);if(c)showCard(c,false)}
   else if(el=q('[data-filter]')){cardFilter=el.dataset.filter;render()}
   else if(el=q('#logout')){logout()}
+  else if(el=q('#coinzero')){if(el.dataset.ok){C.coins=0;persist('settings');render();toast('coin เหลือ 0 แล้ว')}else{el.dataset.ok=1;el.textContent='กดอีกครั้งเพื่อยืนยัน'}}
   else if(el=q('#openpack')){openPack()}
   else if(el=q('[data-goto]')){tab=el.dataset.goto;OPEN={stage:'pack',cards:[],idx:0};render();scrollTo(0,0)}
   else if(el=q('#openagain')){OPEN={stage:'pack',cards:[],idx:0};render()}

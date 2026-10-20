@@ -225,10 +225,14 @@ body.gamebg h1{color:#fff}
 .stack{position:relative;width:min(80vw,330px);aspect-ratio:63/88;margin:0 auto;cursor:pointer}
 .stack .sc{position:absolute;inset:0;transform:translateY(calc(var(--d)*-6px)) scale(calc(1 - var(--d)*.03));transition:transform .28s,opacity .28s}
 .stack .sc .card{height:100%;font-size:clamp(10px,3.3vw,15px);cursor:pointer}
-.stack .sc.top{animation:pop .5s cubic-bezier(.2,1.4,.4,1)}
-.stack .sc.fly{transform:translate(-120%,-10%) rotate(-25deg);opacity:0}
+.stack .sc.top{z-index:2}
+.stack .sc.fly{transform:translate(-130%,-6%) rotate(-22deg)!important;opacity:0}
 #ptr{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) - 30px);transform:translate(-50%,0);opacity:0;z-index:70;width:40px;height:40px;border-radius:50%;background:var(--surface);color:var(--accent);box-shadow:0 2px 10px rgba(0,0,0,.3);display:grid;place-items:center;font-size:20px;font-weight:800;transition:opacity .2s}
 #ptr span{transition:transform .2s;display:block}#ptr.ready span{transform:rotate(180deg)}#ptr.spin span{animation:spin .7s linear infinite}
+.card .in{min-height:0;overflow:hidden}
+.card .in>*{flex-shrink:0}
+.card .in>.flv{flex:1 1 auto;min-height:0;overflow:hidden}
+.newb{position:absolute;top:-6px;left:-4px;z-index:4;background:#ff5a1f;color:#fff;font-weight:800;font-size:11px;padding:2px 8px;border-radius:999px;box-shadow:0 2px 6px rgba(0,0,0,.4)}
 @keyframes pop{0%{transform:rotateY(90deg) scale(.6);opacity:0}100%{transform:none;opacity:1}}
 nav{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);z-index:20}
 nav .in{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);align-items:end}
@@ -978,7 +982,7 @@ function vPack(){const all=getPool().map(poolCard),got=all.filter(c=>c.got).leng
 function vSettings(){return vPlan()+`<h2>การ์ด</h2>${forgeBox()}
   <div class="ex"><b>อัปโหลดรูปการ์ดทีละหลายรูป</b><div class="muted small">เลือกรูปทั้งหมดได้ในครั้งเดียว แอปจับคู่กับการ์ดจากชื่อไฟล์ เช่น Igniso_123.png, Pyroking_SAR_456.png</div>
   <label class="btn sm" style="text-align:center">${DRV_BUSY?'กำลังอัปโหลด...':'เลือกรูป'}<input type="file" id="bulkin" accept="image/*" multiple hidden ${DRV_BUSY?'disabled':''}></label><div class="small" id="drvst" aria-live="polite">${esc(DRV_MSG)}</div></div>
-  ${UID?'<button class="btn ghost sm" id="logout">ออกจากระบบ</button>':''}<div class="ex"><b>ซองการ์ด</b><div class="row between"><label for="packcost">ราคาเปิดซอง (coin)</label><input id="packcost" type="number" min="0" step="10" value="${packCost()}" style="width:100px"></div><div class="muted small">ตั้งเป็น 0 = เปิดฟรีไม่จำกัด · coin ตอนนี้ ${(C.coins||0).toLocaleString()}</div></div><div class="muted small" style="text-align:center">เวอร์ชัน 11</div>`}
+  ${UID?'<button class="btn ghost sm" id="logout">ออกจากระบบ</button>':''}<div class="ex"><b>ซองการ์ด</b><div class="row between"><label for="packcost">ราคาเปิดซอง (coin)</label><input id="packcost" type="number" min="0" step="10" value="${packCost()}" style="width:100px"></div><div class="muted small">ตั้งเป็น 0 = เปิดฟรีไม่จำกัด · coin ตอนนี้ ${(C.coins||0).toLocaleString()}</div></div><div class="muted small" style="text-align:center">เวอร์ชัน 12</div>`}
 function vCards(){
   if(cardView==='pack')return vPack();
   const all=buildCards(), got=all.filter(c=>c.got).length;
@@ -1014,12 +1018,12 @@ function vOpen(){
      <div class="openhint">${cur.isNew?'<b class="newtag">NEW</b> ':''}${TIERS.find(t=>t[0]===cur.tier)[2]} · ${esc(cur.mon)}</div>
      <div class="muted small" style="text-align:center">แตะการ์ดเพื่อดูใบถัดไป</div></div>`}
   if(OPEN.stage==='done')return `<div class="openwrap"><div class="openhead"><b>ได้การ์ด ${OPEN.cards.length} ใบ</b><span class="coin">🪙 ${c.toLocaleString()}</span></div>
-     <div class="cards">${OPEN.cards.map(x=>`<div style="position:relative">${cardHTML(x)}${x.isNew?'<span class="lockb" style="bottom:auto;top:4%;background:#ff5a1f">NEW</span>':''}</div>`).join('')}</div>
+     <div class="cards">${OPEN.cards.map(x=>`<div style="position:relative">${cardHTML(x)}${x.isNew?'<span class="newb">NEW</span>':''}</div>`).join('')}</div>
      <div class="row" style="justify-content:center"><button class="btn ghost" id="opendone">กลับ</button>${can?'<button class="btn" id="openagain">เปิดอีกซอง</button>':''}</div></div>`;
   return `<div class="openwrap"><div class="openhead"><div><div class="eyebrow">Booster</div><h1>เปิดซอง</h1></div><span class="coin big">🪙 ${c.toLocaleString()}</span></div>
    <div class="packstage"><div class="pack2 ${can?'':'dim'}" id="pack2"><div class="ptop"><div class="cutline" id="cutline"></div></div>
      <div class="pbody"><span class="pk1">REP LEDGER</span><span class="pk2">BOOSTER PACK</span><span class="pk3">${PACK_SIZE} CARDS</span></div></div></div>
-   <div class="openhint">${can?'ลากนิ้วข้ามหัวซองจากซ้ายไปขวาเพื่อกรีด':`coin ไม่พอ ต้องมี ${packCost()} · ออกกำลังกายเพื่อรับ coin`}</div>
+   <div class="openhint">${can?'ปัดนิ้วผ่านซองซ้าย-ขวาเพื่อกรีด':`coin ไม่พอ ต้องมี ${packCost()} · ออกกำลังกายเพื่อรับ coin`}</div>
    <div class="muted small" style="text-align:center">ซองละ ${packCost()} coin · ${PACK_SIZE} ใบ · ใบสุดท้ายการันตี R ขึ้นไป</div>
    <details class="small" style="text-align:center"><summary>อัตราการออกต่อใบ</summary><div class="tiers" style="justify-content:center;margin-top:6px">${RATES.map(([t,r])=>`<span class="tier got">${t} ${r}%</span>`).join('')}</div></details></div>`;
 }
@@ -1032,15 +1036,19 @@ function wireOpen(){
   const pk=document.getElementById('pack2');
   if(pk&&!pk.classList.contains('dim')){let sx=null,done=false;const line=document.getElementById('cutline');
     const top=()=>pk.getBoundingClientRect();
-    pk.onpointerdown=e=>{const r=top();if(e.clientY-r.top<r.height*.32){sx=e.clientX;pk.setPointerCapture(e.pointerId)}};
-    pk.onpointermove=e=>{if(sx==null||done)return;const r=top(),p=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));line.style.width=(p*100)+'%';
-      if(p>.92){done=true;tear()}};
+    pk.onpointerdown=e=>{sx=e.clientX;pk.setPointerCapture(e.pointerId)};
+    pk.onpointermove=e=>{if(sx==null||done)return;const r=top(),p=Math.min(1,Math.abs(e.clientX-sx)/(r.width*.55));line.style.width=(p*100)+'%';
+      line.style.left=e.clientX<sx?'auto':'0';line.style.right=e.clientX<sx?'0':'auto';if(p>=1){done=true;tear()}};
     pk.onpointerup=()=>{if(!done){sx=null;line.style.width='0'}};
     const tear=()=>{const res=drawPack();if(!res)return;pk.classList.add('torn');try{navigator.vibrate&&navigator.vibrate(40)}catch(e){}
-      setTimeout(()=>{OPEN={stage:'reveal',cards:res,idx:0};render();burst(res[0].tier)},700)}}
+      setTimeout(()=>{OPEN={stage:'reveal',cards:res,idx:0};render();setTimeout(()=>burst(res[0].tier),150)},700)}}
   const st=document.getElementById('stack');
-  if(st)st.onclick=()=>{const t=st.querySelector('.sc.top');if(!t)return;t.classList.add('fly');
-    setTimeout(()=>{OPEN.idx++;if(OPEN.idx>=OPEN.cards.length){OPEN.stage='done';render()}else{render();burst(OPEN.cards[OPEN.idx].tier)}},280)};
+  if(st){let busy=false;st.onclick=()=>{if(busy)return;const t=st.querySelector('.sc.top');if(!t)return;busy=true;t.classList.add('fly');
+    setTimeout(()=>{t.remove();OPEN.idx++;if(OPEN.idx>=OPEN.cards.length){document.querySelectorAll('.burst').forEach(b=>b.remove());OPEN.stage='done';render();return}
+      const rest=[...st.querySelectorAll('.sc')];rest.forEach((el,i)=>el.style.setProperty('--d',rest.length-1-i));const nt=rest[rest.length-1];nt.classList.add('top');
+      const cur=OPEN.cards[OPEN.idx],h=document.querySelector('.openhint'),hd=document.querySelector('.openhead .muted');
+      if(h)h.innerHTML=`${cur.isNew?'<b class="newtag">NEW</b> ':''}${TIERS.find(x=>x[0]===cur.tier)[2]} · ${esc(cur.mon)}`;if(hd)hd.textContent=`ใบที่ ${OPEN.idx+1}/${OPEN.cards.length}`;
+      document.querySelectorAll('.burst').forEach(b=>b.remove());setTimeout(()=>burst(cur.tier),120);busy=false},300)}}
 }
 
 /* ---------- progress ---------- */

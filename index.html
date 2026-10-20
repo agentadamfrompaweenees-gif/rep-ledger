@@ -633,10 +633,32 @@ function FEAT(type,M){return ({push:[`<path d="M-14 -22l-6 -14 12 8zM14 -22l6 -1
 const artKey=(name,tier)=>FULLART.includes(tier)?name+'|'+tier:name+'|s'+stageOf(tier);
 function artImg(name,tier){const A=C.art||{};const id=A[artKey(name,tier)]||A[name+'|s'+stageOf(tier)];
   return id&&/^https?:/.test(id)?`<img src="${esc(id)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block">`:''}
+/* ย่อรูปก่อนอัปโหลด: กว้างสุด 720px เป็น JPEG ~100KB (รูปจาก AI ปกติ 1.5-2MB ทำให้โหลดช้า) */
+async function shrink(blob){
+  try{const bm=await createImageBitmap(blob),w=Math.min(720,bm.width),h=Math.round(bm.height*w/bm.width);
+    const cv=document.createElement('canvas');cv.width=w;cv.height=h;cv.getContext('2d').drawImage(bm,0,0,w,h);
+    const out=await new Promise(r=>cv.toBlob(r,'image/jpeg',.85));return out&&out.size<blob.size?out:blob}catch(e){return blob}
+}
+let SHRINK={busy:false,msg:''};
+async function shrinkAll(){
+  if(SHRINK.busy||!SB||!UID)return;SHRINK.busy=true;
+  const say=t=>{SHRINK.msg=t;const e=document.getElementById('shrinkst');if(e)e.textContent=t};
+  const items=[...Object.entries(C.art||{}).map(([k,u])=>({u,set:v=>C.art[k]=v})),...(C.pool||[]).filter(p=>p.img).map(p=>({u:p.img,set:v=>p.img=v}))]
+    .filter(x=>/supabase\.co\/storage/.test(x.u||''));
+  let ok=0,skip=0,fail=0,i=0;
+  const work=async()=>{while(i<items.length){const it=items[i++];
+    try{const path=decodeURIComponent(it.u.split('/object/public/art/')[1].split('?')[0]);
+      const b=await (await fetch(it.u)).blob();if(b.size<300000){skip++;continue}
+      const sm=await shrink(b);const {error}=await SB.storage.from('art').upload(path,sm,{upsert:true,contentType:sm.type});if(error)throw error;
+      it.set(SB.storage.from('art').getPublicUrl(path).data.publicUrl+'?v='+Date.now());ok++;persist('settings')}catch(e){fail++}
+    say(`กำลังย่อ ${ok+skip+fail}/${items.length}`)}};
+  await Promise.all([work(),work(),work()]);SHRINK.busy=false;render();say(`เสร็จ: ย่อแล้ว ${ok} รูป · เล็กอยู่แล้ว ${skip}${fail?` · พลาด ${fail}`:''}`);
+}
+function preload(urls){urls.filter(Boolean).forEach(u=>{const im=new Image();im.src=u})}
 async function putArt(key,file){
   if(!SB||!UID)throw new Error('ต้องเข้าสู่ระบบก่อน');
   const path=UID+'/'+key.replace(/[^A-Za-z0-9]+/g,'_')+'.'+((file.type.split('/')[1]||'png').replace('jpeg','jpg'));
-  const {error}=await SB.storage.from('art').upload(path,file,{upsert:true,contentType:file.type||'image/png'});
+  file=await shrink(file);const {error}=await SB.storage.from('art').upload(path,file,{upsert:true,contentType:file.type||'image/png'});
   if(error)throw error;
   C.art=C.art||{};C.art[key]=SB.storage.from('art').getPublicUrl(path).data.publicUrl+'?v='+Date.now();persist('settings');
 }
@@ -765,7 +787,7 @@ async function forgeOne(p,key,model){
   const j=await r.json();if(!r.ok)throw new Error(j.error?.message||('HTTP '+r.status));
   const part=(j.candidates?.[0]?.content?.parts||[]).find(x=>x.inlineData);if(!part)throw new Error('ไม่ได้ภาพกลับมา');
   const bin=atob(part.inlineData.data),u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);
-  const blob=new Blob([u8],{type:part.inlineData.mimeType||'image/png'});
+  const blob=await shrink(new Blob([u8],{type:part.inlineData.mimeType||'image/png'}));
   const path=UID+'/pool/'+p.id.replace('|','_')+'.png';
   const {error}=await SB.storage.from('art').upload(path,blob,{upsert:true,contentType:blob.type});if(error)throw error;
   p.img=SB.storage.from('art').getPublicUrl(path).data.publicUrl+'?v='+Date.now();
@@ -982,7 +1004,7 @@ function vPack(){const all=getPool().map(poolCard),got=all.filter(c=>c.got).leng
 function vSettings(){return vPlan()+`<h2>การ์ด</h2>${forgeBox()}
   <div class="ex"><b>อัปโหลดรูปการ์ดทีละหลายรูป</b><div class="muted small">เลือกรูปทั้งหมดได้ในครั้งเดียว แอปจับคู่กับการ์ดจากชื่อไฟล์ เช่น Igniso_123.png, Pyroking_SAR_456.png</div>
   <label class="btn sm" style="text-align:center">${DRV_BUSY?'กำลังอัปโหลด...':'เลือกรูป'}<input type="file" id="bulkin" accept="image/*" multiple hidden ${DRV_BUSY?'disabled':''}></label><div class="small" id="drvst" aria-live="polite">${esc(DRV_MSG)}</div></div>
-  ${UID?'<button class="btn ghost sm" id="logout">ออกจากระบบ</button>':''}<div class="ex"><b>ซองการ์ด</b><div class="row between"><label for="packcost">ราคาเปิดซอง (coin)</label><input id="packcost" type="number" min="0" step="10" value="${packCost()}" style="width:100px"></div><div class="muted small">ตั้งเป็น 0 = เปิดฟรีไม่จำกัด · coin ตอนนี้ ${(C.coins||0).toLocaleString()}</div></div><div class="muted small" style="text-align:center">เวอร์ชัน 12</div>`}
+  ${UID?'<button class="btn ghost sm" id="logout">ออกจากระบบ</button>':''}<div class="ex"><b>ซองการ์ด</b><div class="row between"><label for="packcost">ราคาเปิดซอง (coin)</label><input id="packcost" type="number" min="0" step="10" value="${packCost()}" style="width:100px"></div><div class="muted small">ตั้งเป็น 0 = เปิดฟรีไม่จำกัด · coin ตอนนี้ ${(C.coins||0).toLocaleString()}</div></div><div class="ex"><b>ทำให้รูปโหลดเร็วขึ้น</b><div class="muted small">ย่อรูปการ์ดที่อัปโหลดไว้แล้วให้เล็กลงประมาณ 15 เท่า ทำครั้งเดียว รูปใหม่ต่อจากนี้ย่อให้อัตโนมัติ</div><button class="btn sm" id="shrinkgo" ${SHRINK.busy?'disabled':''}>${SHRINK.busy?'กำลังย่อ...':'ย่อรูปทั้งหมด'}</button><div class="small" id="shrinkst" aria-live="polite">${esc(SHRINK.msg)}</div></div><div class="muted small" style="text-align:center">เวอร์ชัน 13</div>`}
 function vCards(){
   if(cardView==='pack')return vPack();
   const all=buildCards(), got=all.filter(c=>c.got).length;
@@ -1040,7 +1062,7 @@ function wireOpen(){
     pk.onpointermove=e=>{if(sx==null||done)return;const r=top(),p=Math.min(1,Math.abs(e.clientX-sx)/(r.width*.55));line.style.width=(p*100)+'%';
       line.style.left=e.clientX<sx?'auto':'0';line.style.right=e.clientX<sx?'0':'auto';if(p>=1){done=true;tear()}};
     pk.onpointerup=()=>{if(!done){sx=null;line.style.width='0'}};
-    const tear=()=>{const res=drawPack();if(!res)return;pk.classList.add('torn');try{navigator.vibrate&&navigator.vibrate(40)}catch(e){}
+    const tear=()=>{const res=drawPack();if(!res)return;preload(res.map(c=>c.img));pk.classList.add('torn');try{navigator.vibrate&&navigator.vibrate(40)}catch(e){}
       setTimeout(()=>{OPEN={stage:'reveal',cards:res,idx:0};render();setTimeout(()=>burst(res[0].tier),150)},700)}}
   const st=document.getElementById('stack');
   if(st){let busy=false;st.onclick=()=>{if(busy)return;const t=st.querySelector('.sc.top');if(!t)return;busy=true;t.classList.add('fly');
@@ -1089,6 +1111,7 @@ app.addEventListener('click',e=>{
   else if(el=q('[data-card]')){const c=buildCards().find(x=>x.id===el.dataset.card);if(c)showCard(c,false)}
   else if(el=q('[data-filter]')){cardFilter=el.dataset.filter;render()}
   else if(el=q('#logout')){logout()}
+  else if(el=q('#shrinkgo')){shrinkAll()}
   else if(el=q('#openpack')){openPack()}
   else if(el=q('[data-goto]')){tab=el.dataset.goto;OPEN={stage:'pack',cards:[],idx:0};render();scrollTo(0,0)}
   else if(el=q('#openagain')){OPEN={stage:'pack',cards:[],idx:0};render()}

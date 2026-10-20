@@ -667,7 +667,7 @@ function cardHTML(c,big){
   const no=String((hash(c.name)%90)+10).padStart(3,'0');
   return `<${tag} class="card r-${c.tier} ty-${ty}${fa}" data-card="${esc(c.id)}"><div class="in">
     <div class="top"><span class="stg">${['พื้นฐาน','ร่าง 1','ร่าง 2'][st]}</span><span class="nm">${mon}${exm}</span><span class="hp num"><small>HP</small>${c.hp}</span>${en}</div>
-    <div class="art">${art(c.name,ty,c.tier)}</div>
+    <div class="art">${c.img?`<img src="${esc(c.img)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block">`:art(c.name,ty,c.tier)}</div>
     <div class="meta">มอนสเตอร์ธาตุ${M.el} · ${TIERS[ti][2]} · สูงสุด ${c.atk}</div>
     <div class="atk">${Array.from({length:cost},()=>en).join('')}<span class="an">${c.pack?SPEC(c.mon,ty).skill.split(' ')[0]+' '+['Slam','Crush','Burst','Strike','Rush','Wave'][hash(c.mon)%6]:ty==='other'?esc(c.name):SPEC(c.name,ty).skill}</span><span class="dmg num">${parseFloat(c.atk)||c.need*10}</span></div>
     <div class="flv">${ty==='other'||c.pack?'':`ท่าจริง: <b>${esc(c.name)}</b> · `}${c.flavor}</div>
@@ -689,14 +689,80 @@ const POOL=(()=>{const out=[],used=new Set();let n=0;const types=['push','pull',
 const POOL_POSE=Object.fromEntries(POOL.map(p=>[p.key,p.pose]));
 function poolCard(p){const ti=TIERS.findIndex(t=>t[0]===p.tier),have=(C.pulls||{})[p.id]||0;
   return {id:p.id,group:'pack',pack:true,name:p.key,mon:p.mon,tier:p.tier,need:1,have,got:have>0,type:p.type,
-    hp:40+ti*30+(hash(p.mon)%4)*10,sub:'',atkName:'',atk:(20+ti*25+(hash(p.mon)%5)*5)+'',flavor:`การ์ดสะสมจากซอง · มีอยู่ ${have} ใบ`,foot:`#${String(p.no).padStart(3,'0')}`}}
+    img:p.img||'',hp:40+ti*30+(hash(p.mon)%4)*10,sub:'',atkName:'',atk:(20+ti*25+(hash(p.mon)%5)*5)+'',flavor:`การ์ดสะสมจากซอง · มีอยู่ ${have} ใบ`,foot:`#${String(p.no).padStart(3,'0')}`}}
+/* ===== โรงเจนการ์ดสะสม: สุ่มสเปกมอนสเตอร์ → Gemini วาด → อัปโหลดเข้า Supabase อัตโนมัติ ===== */
+const F_ELEM=[['Fire','push'],['Water','pull'],['Grass','legs'],['Electric','other'],['Ice','pull'],['Rock','legs'],['Psychic','other'],['Dark','other'],['Fairy','other'],['Dragon','push'],['Steel','other'],['Normal','other'],['Ghost','other'],['Poison','legs'],['Flying','pull'],['Bug','legs']];
+const F_ANIMAL=['fox','wolf','bear cub','tiger','lion','otter','axolotl','frog','turtle','tortoise','salamander','dragon','wyvern','owl','eagle','penguin','duck','rabbit','deer','ram','bull','rhino','gorilla','monkey','raccoon','red panda','hedgehog','armadillo','beetle','mantis','moth','bee','jellyfish','octopus','shark','seal','crab','snake','lizard','chameleon','bat','cat','lynx','hamster','mole','boar','horse','camel','yeti','golem','spirit','mushroom creature','cactus creature','crystal creature','cloud creature'];
+const F_POSE=['lying on a flat bench pressing a heavy barbell up','pressing a barbell overhead','curling a dumbbell and flexing its bicep','deep squat with a barbell on its back','deadlifting a heavy barbell from the floor','doing a pull-up on a high bar','doing push-ups on the ground','doing lunges holding dumbbells','swinging a kettlebell','doing a plank with a determined face','battle-rope slams with waves in the ropes','flipping a giant tire','jumping rope in mid-air','sprinting forward','doing a double-biceps bodybuilding pose','carrying heavy dumbbells in a farmer walk','box jumping in mid-air','resting proudly with a towel on its shoulders after training','doing a handstand','shadow boxing with fists up'];
+const F_SCENE=['a sunny beach','a misty bamboo forest','a volcanic crater with lava','a snowy mountain peak','a neon city rooftop at night','an underwater coral reef','a flower meadow','a desert canyon at sunset','an ancient temple ruin','a cozy wooden gym','a rainy city street','a crystal cave','a starry night hill','an autumn maple forest','a floating sky island','a swamp with fireflies','a frozen lake','a thunderstorm plain','a cherry blossom park','a high-tech futuristic gym','a sakura riverside at dawn','a giant mushroom forest','an old training dojo','a lighthouse cliff'];
+const F_PERS=['cheerful','grumpy','sleepy but determined','fierce','shy','cocky','calm and wise','hyperactive','proud','mischievous'];
+const F_TIERSTYLE={C:'Simple clean composition, eye-level camera, soft lighting, small cute basic-form creature.',
+ U:'Clean composition, slightly closer framing, bright lighting, cute creature with a bit more personality.',
+ R:'Dynamic three-quarter low angle, stronger lighting with rim light, motion lines, evolved athletic creature.',
+ RR:'Dramatic low angle, intense lighting, energy effects of its element swirling around, powerful evolved creature.',
+ AR:'FULL-ART vertical illustration: wide storybook scene, the environment fills the whole picture, soft pastel painterly lighting, calm slice-of-life moment, creature small to medium in frame.',
+ SR:'FULL-ART vertical illustration: extreme low-angle hero shot, ultra-wide lens perspective, the creature bursting out of the frame, dramatic rim light, energy streaks, final-evolution powerful creature.',
+ SAR:'SPECIAL FULL-ART vertical illustration: epic cinematic movie-poster scene, golden hour backlight with god rays, floating particles, highly detailed painterly background, emotional heroic moment, final-evolution legendary creature.',
+ UR:'FULL-ART vertical illustration rendered entirely in shiny gold metallic tones like a gold-plated statue, radiant gold light burst behind it, three-quarter low angle, majestic final-evolution creature.'};
+const F_RATIO={C:24,U:18,R:12,RR:8,AR:6,SR:5,SAR:3,UR:2};
+const pickR=a=>a[Math.floor(Math.random()*a.length)];
+function forgeName(){return pickR(PP)+pickR(PS)}
+function forgePlan(n){
+  C.pool=C.pool||[];const start=C.pool.length,tot=Object.values(F_RATIO).reduce((a,b)=>a+b,0);
+  const tiers=[];Object.entries(F_RATIO).forEach(([t,r])=>{for(let i=0;i<Math.max(t==='UR'?1:1,Math.round(n*r/tot));i++)tiers.push(t)});
+  while(tiers.length>n)tiers.splice(tiers.lastIndexOf('C'),1);while(tiers.length<n)tiers.unshift('C');
+  const used=new Set(C.pool.map(p=>p.mon));
+  tiers.forEach((t,i)=>{let nm;do nm=forgeName();while(used.has(nm));used.add(nm);const [el,ty]=pickR(F_ELEM);
+    C.pool.push({id:'g|'+String(start+i+1).padStart(4,'0'),no:start+i+1,key:'gk'+(start+i+1),mon:nm,tier:t,type:ty,el,animal:pickR(F_ANIMAL),pose:pickR(F_POSE),scene:pickR(F_SCENE),pers:pickR(F_PERS),img:''})});
+  persist('settings');
+}
+function forgePrompt(p){
+  return `${F_TIERSTYLE[p.tier]} A ${p.el}-type collectible monster named ${p.mon}, an original creature design based on a ${p.animal}, with clear ${p.el.toLowerCase()} element features and colors, ${p.pers} personality. Pose: ${p.pose}. Environment: ${p.scene}. Style: official-looking collectible monster trading card illustration, painterly digital painting with visible soft brush strokes, rich lighting, cute but powerful Japanese monster-collecting game aesthetic, clean readable silhouette, full body visible, no text, no letters, no logos, no card frame, no border. Original character, not based on any existing franchise character.`;
+}
+async function forgeOne(p,key,model){
+  const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},
+    body:JSON.stringify({contents:[{parts:[{text:forgePrompt(p)}]}],generationConfig:{responseModalities:['IMAGE'],imageConfig:{aspectRatio:FULLART.includes(p.tier)?'3:4':'4:3'}}})});
+  const j=await r.json();if(!r.ok)throw new Error(j.error?.message||('HTTP '+r.status));
+  const part=(j.candidates?.[0]?.content?.parts||[]).find(x=>x.inlineData);if(!part)throw new Error('ไม่ได้ภาพกลับมา');
+  const bin=atob(part.inlineData.data),u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);
+  const blob=new Blob([u8],{type:part.inlineData.mimeType||'image/png'});
+  const path=UID+'/pool/'+p.id.replace('|','_')+'.png';
+  const {error}=await SB.storage.from('art').upload(path,blob,{upsert:true,contentType:blob.type});if(error)throw error;
+  p.img=SB.storage.from('art').getPublicUrl(path).data.publicUrl+'?v='+Date.now();
+}
+let FORGE={busy:false,msg:'',stop:false};
+async function forgeRun(){
+  if(FORGE.busy)return;const key=(document.getElementById('gkey')||{}).value?.trim(),model=(document.getElementById('gmodel')||{}).value?.trim()||'gemini-2.5-flash-image';
+  const say=t=>{FORGE.msg=t;const e=document.getElementById('forgest');if(e)e.textContent=t};
+  if(!key){say('ใส่ Gemini API key ก่อน');return}if(!SB||!UID){say('ต้องเข้าสู่ระบบก่อน');return}
+  try{localStorage.setItem('gemkey',key);localStorage.setItem('gemmodel',model)}catch(e){}
+  const n=Math.max(0,Math.min(500,+(document.getElementById('gcount')||{}).value||0));
+  if(n)forgePlan(n);
+  const todo=(C.pool||[]).filter(p=>!p.img);if(!todo.length){say('ทุกใบมีรูปแล้ว');return}
+  FORGE.busy=true;FORGE.stop=false;render();let ok=0,fail=0,last='',i=0;
+  const worker=async()=>{while(i<todo.length&&!FORGE.stop){const p=todo[i++];
+    try{await forgeOne(p,key,model);ok++;persist('settings')}catch(e){fail++;last=e.message||String(e)}
+    say(`กำลังเจน ${ok+fail}/${todo.length} · สำเร็จ ${ok}${fail?` · พลาด ${fail} (${last})`:''}`)}};
+  await Promise.all([worker(),worker(),worker()]);
+  FORGE.busy=false;render();say(`${FORGE.stop?'หยุดแล้ว':'เสร็จ'}: สำเร็จ ${ok} ใบ${fail?` · พลาด ${fail} ใบ (${last}) กดทำต่อเพื่อเจนใบที่พลาด`:''}`);
+}
+function getPool(){const g=(C.pool||[]).filter(p=>p.img);return g.length?g:POOL}
+function forgeBox(){const pool=C.pool||[],done=pool.filter(p=>p.img).length;let k='',m='gemini-2.5-flash-image';try{k=localStorage.getItem('gemkey')||'';m=localStorage.getItem('gemmodel')||m}catch(e){}
+  return `<details class="ex" ${FORGE.busy?'open':''}><summary><b>โรงเจนการ์ดสะสม</b> <span class="muted small">มีรูปแล้ว ${done}/${pool.length} ใบ</span></summary>
+  <div class="muted small">สุ่มมอนสเตอร์ ธาตุ ท่า ฉาก และระดับความแรร์ให้เอง แล้วให้ Gemini วาดและอัปโหลดเข้าแอปอัตโนมัติ ไม่ต้องคัด · ค่าใช้จ่ายประมาณภาพละ 1.5 บาท · ระหว่างเจนอย่าปิดแอป ถ้าปิดไปกด "เจน" อีกครั้งจะทำต่อจากที่ค้าง</div>
+  <input id="gkey" type="password" placeholder="Gemini API key" value="${esc(k)}" autocomplete="off">
+  <input id="gmodel" value="${esc(m)}" aria-label="Gemini model">
+  <div class="row"><label for="gcount" class="small" style="white-space:nowrap">เพิ่มการ์ดใหม่</label><input id="gcount" type="number" min="0" max="500" value="${pool.length?0:120}" style="width:90px"><span class="small muted">ใบ (0 = ทำต่อเฉพาะใบที่ค้าง)</span></div>
+  <div class="row"><button class="btn sm" id="forgego" ${FORGE.busy?'disabled':''}>${FORGE.busy?'กำลังเจน...':'เจนการ์ด'}</button>${FORGE.busy?'<button class="btn ghost sm" id="forgestop">หยุด</button>':''}</div>
+  <div class="small" id="forgest" aria-live="polite">${esc(FORGE.msg)}</div></details>`}
+
 function rollTier(minIdx=0){let r=Math.random()*100,acc=0;const rs=RATES.slice(minIdx),tot=rs.reduce((a,x)=>a+x[1],0);r=r*tot/100;
   for(const [t,w] of rs){acc+=w;if(r<acc)return t}return rs[0][0]}
 function openPack(){
   if((C.coins||0)<PACK_COST){toast(`coin ไม่พอ ต้องมี ${PACK_COST}`);return}
   C.coins-=PACK_COST;C.pulls=C.pulls||{};
   const res=[];for(let i=0;i<PACK_SIZE;i++){const t=i===PACK_SIZE-1?rollTier(2):rollTier(); // ใบสุดท้ายการันตี R ขึ้นไป
-    const opts=POOL.filter(p=>p.tier===t);const p=opts[Math.floor(Math.random()*opts.length)];
+    let opts=getPool().filter(p=>p.tier===t);if(!opts.length)opts=getPool();const p=opts[Math.floor(Math.random()*opts.length)];
     const isNew=!C.pulls[p.id]&&!res.some(x=>x.id===p.id);C.pulls[p.id]=(C.pulls[p.id]||0)+1;if(!C.seen.includes(p.id))C.seen.push(p.id);res.push({...poolCard(p),isNew})}
   persist('settings');
   const order=res.map((c,i)=>[c,i]).sort((a,b)=>TIERS.findIndex(t=>t[0]===a[0].tier)-TIERS.findIndex(t=>t[0]===b[0].tier)).map(x=>x[0]);
@@ -868,9 +934,9 @@ function vPlan(){
 /* ---------- card library ---------- */
 let cardView='quest';
 function viewTabs(){return `<div class="chips" role="tablist">${[['quest','การ์ดภารกิจ'],['pack','การ์ดสะสม (ซอง)']].map(([k,l])=>`<button class="chip" data-cview="${k}" aria-pressed="${cardView===k}" style="flex:1">${l}</button>`).join('')}</div>`}
-function vPack(){const all=POOL.map(poolCard),got=all.filter(c=>c.got).length;
+function vPack(){const all=getPool().map(poolCard),got=all.filter(c=>c.got).length;
   return `<div><div class="eyebrow">การ์ดสะสม ${got} / ${all.length} ใบ</div><h1>คลังการ์ด</h1></div>${viewTabs()}
-  ${packBox()}<div class="prog"><i style="width:${got/all.length*100}%"></i></div>
+  ${packBox()}${forgeBox()}<div class="prog"><i style="width:${got/all.length*100}%"></i></div>
   <div class="tiers">${TIERS.map(([t])=>{const n=all.filter(c=>c.tier===t),g=n.filter(c=>c.got).length;return `<span class="tier ${g?'got':''}">${t} ${g}/${n.length}</span>`}).join('')}</div>
   <div class="cards">${all.map(c=>cardHTML(c)).join('')}</div>`}
 function vCards(){
@@ -931,6 +997,8 @@ app.addEventListener('click',e=>{
   else if(el=q('[data-filter]')){cardFilter=el.dataset.filter;render()}
   else if(el=q('#logout')){logout()}
   else if(el=q('#openpack')){openPack()}
+  else if(el=q('#forgego')){forgeRun()}
+  else if(el=q('#forgestop')){FORGE.stop=true}
   else if(el=q('[data-cview]')){cardView=el.dataset.cview;render()}
   else if(el=q('#preview')){const n='Bench Press';let i=0;const show=()=>{const[t,need,l]=TIERS[i];unlockFX({id:'x',name:n,tier:t,need,have:need,got:true,type:'push',hp:80+i*20,sub:'ธาตุดัน · '+l,atkName:'ยกหนักสุด',atk:'80 kg',flavor:'การ์ดตัวอย่าง',foot:'ตัวอย่าง'},1,bt=>{
       bt.textContent=i<TIERS.length-1?'ถัดไป':'ปิด';bt.onclick=ev=>{ev.stopPropagation();i++;if(i<TIERS.length)show();else document.getElementById('ovl').innerHTML=''}})};show()}

@@ -1,5 +1,5 @@
 // เก็บหน้าแอปไว้ในเครื่อง เปิดได้แม้เน็ตไม่ดี · รูปการ์ดจาก Supabase เก็บไว้ในเครื่องหลังโหลดครั้งแรก
-const CACHE='rep-ledger-v13', IMG='rep-ledger-img-v1';
+const CACHE='rep-ledger-v14', IMG='rep-ledger-img-v1';
 const SHELL=['./','index.html','config.js','manifest.json','icon-192.png','icon-512.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)));self.skipWaiting()});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE&&k!==IMG).map(k=>caches.delete(k)))));self.clients.claim()});

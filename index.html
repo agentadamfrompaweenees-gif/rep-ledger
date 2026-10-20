@@ -610,10 +610,10 @@ async function bulkImport(files){
   const say=t=>{DRV_MSG=t;const s=document.getElementById('drvst');if(s)s.textContent=t};
   const pick={},skipped=[];
   [...files].forEach(f=>{const k=keyFromFile(f.name);if(!k){skipped.push(f.name);return}if(!pick[k]||f.lastModified>pick[k].lastModified)pick[k]=f});
-  const todo=Object.entries(pick);let ok=0,fail=0;
-  for(const [k,f] of todo){say(`กำลังอัปโหลด ${ok+fail+1}/${todo.length}: ${f.name}`);try{await putArt(k,f);ok++}catch(e){fail++}}
+  const todo=Object.entries(pick);let ok=0,fail=0,lastErr='';
+  for(const [k,f] of todo){say(`กำลังอัปโหลด ${ok+fail+1}/${todo.length}: ${f.name}`);try{await putArt(k,f);ok++}catch(e){fail++;lastErr=e.message||String(e)}}
   DRV_BUSY=false;render();toast(`อัปโหลดแล้ว ${ok} รูป`);
-  say(`เสร็จ: อัปโหลด ${ok} รูป${fail?` · พลาด ${fail} รูป`:''}${skipped.length?` · ชื่อไฟล์ไม่ตรงการ์ดไหน: ${skipped.join(', ')}`:''}`);
+  say(`เสร็จ: อัปโหลด ${ok} รูป${fail?` · พลาด ${fail} รูป (สาเหตุ: ${lastErr})`:''}${skipped.length?` · ชื่อไฟล์ไม่ตรงการ์ดไหน: ${skipped.join(', ')}`:''}`);
 }
 function art(name,type,tier){
   const im=artImg(name,tier); if(im)return im;

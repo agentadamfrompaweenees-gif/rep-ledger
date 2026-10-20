@@ -195,9 +195,41 @@ select{background:var(--surface);width:100%}
 .pack::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.55) 45%,transparent 60%);background-size:300% 100%;animation:holo 3s linear infinite}
 .pack .pk1{font-family:var(--display);font-weight:800;font-size:28px;letter-spacing:.06em}.pack .pk2{font-weight:700;letter-spacing:.2em;font-size:12px}.pack .pk3{background:#fff;color:#111;border-radius:999px;padding:2px 12px;font-weight:800;font-size:12px}
 .packbox .btn:disabled{cursor:not-allowed}
+.navpack{position:relative}
+.navpack .np{display:grid;place-items:center;width:52px;height:52px;margin:-22px auto 2px;border-radius:50%;background:linear-gradient(135deg,#5b2bb0,#ff5a1f 60%,#ffd447);box-shadow:0 4px 14px rgba(255,90,31,.5),0 0 0 4px var(--surface)}
+.navpack .np svg{stroke:#fff;margin:0}
+nav button.navpack[aria-current="true"]{color:var(--accent)}
+body.gamebg{background:radial-gradient(120% 80% at 50% 20%,#3a2a7a 0%,#141030 55%,#07060f 100%);color:#fff}
+body.gamebg .muted{color:#b9b4d8}
+body.gamebg .btn.ghost{color:#fff;border-color:rgba(255,255,255,.4)}
+body.gamebg h1{color:#fff}
+.openwrap{display:flex;flex-direction:column;gap:16px;min-height:70vh}
+.openhead{display:flex;justify-content:space-between;align-items:center}
+.coin{font-family:var(--display);font-weight:800;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);padding:6px 12px;border-radius:999px}
+.coin.big{font-size:20px}
+.packstage{display:grid;place-items:center;padding:20px 0;perspective:900px}
+.pack2{position:relative;width:min(64vw,250px);aspect-ratio:5/8;touch-action:none;user-select:none;animation:float 3s ease-in-out infinite;filter:drop-shadow(0 18px 30px rgba(255,120,60,.45))}
+.pack2.dim{filter:grayscale(.8) brightness(.6);animation:none}
+.pack2 .ptop,.pack2 .pbody{position:absolute;left:0;right:0;background:linear-gradient(135deg,#1b2a6b,#5b2bb0 40%,#ff5a1f 72%,#ffd447);overflow:hidden}
+.pack2 .ptop{top:0;height:16%;border-radius:12px 12px 0 0;border-bottom:2px dashed rgba(255,255,255,.55);z-index:2;transition:transform .7s cubic-bezier(.3,.6,.4,1),opacity .7s}
+.pack2 .pbody{top:16%;bottom:0;border-radius:0 0 12px 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#fff}
+.pack2 .ptop::after,.pack2 .pbody::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.5) 45%,transparent 60%);background-size:300% 100%;animation:holo 3s linear infinite}
+.cutline{position:absolute;left:0;bottom:-2px;height:4px;width:0;background:#fff;box-shadow:0 0 12px #fff,0 0 24px #ffd447;z-index:3}
+.pack2.torn .ptop{transform:translate(60px,-160px) rotate(25deg);opacity:0}
+.pack2.torn .pbody{animation:packglow .7s ease-out}
+.pack2 .pk1{font-family:var(--display);font-weight:800;font-size:26px;letter-spacing:.06em}.pack2 .pk2{font-weight:700;letter-spacing:.2em;font-size:11px}.pack2 .pk3{background:#fff;color:#111;border-radius:999px;padding:2px 12px;font-weight:800;font-size:12px}
+@keyframes float{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-10px) rotate(1deg)}}
+@keyframes packglow{50%{filter:brightness(1.6)}}
+.openhint{text-align:center;font-weight:700;font-size:16px}
+.newtag{background:#ff5a1f;color:#fff;padding:1px 8px;border-radius:999px;font-size:12px}
+.stack{position:relative;width:min(80vw,330px);aspect-ratio:63/88;margin:0 auto;cursor:pointer}
+.stack .sc{position:absolute;inset:0;transform:translateY(calc(var(--d)*-6px)) scale(calc(1 - var(--d)*.03));transition:transform .28s,opacity .28s}
+.stack .sc .card{height:100%;font-size:clamp(10px,3.3vw,15px);cursor:pointer}
+.stack .sc.top{animation:pop .5s cubic-bezier(.2,1.4,.4,1)}
+.stack .sc.fly{transform:translate(-120%,-10%) rotate(-25deg);opacity:0}
 @keyframes pop{0%{transform:rotateY(90deg) scale(.6);opacity:0}100%{transform:none;opacity:1}}
 nav{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);z-index:20}
-nav .in{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+nav .in{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);align-items:end}
 nav button{background:none;padding:12px 0 10px;color:var(--muted);font-size:12px;font-weight:600;border-radius:0}
 nav button[aria-current="true"]{color:var(--accent)}
 nav svg{display:block;margin:0 auto 2px;width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2}
@@ -209,9 +241,10 @@ nav svg{display:block;margin:0 auto 2px;width:22px;height:22px;stroke:currentCol
 <div class="wrap" id="app"><p class="muted">กำลังโหลดข้อมูล...</p></div>
 <nav><div class="in">
   <button data-tab="today"><svg viewBox="0 0 24 24"><path d="M6 4v16M18 4v16M3 8v8M21 8v8M6 12h12"/></svg>วันนี้</button>
-  <button data-tab="plan"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>แผน</button>
   <button data-tab="cards"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="12" height="17" rx="2"/><path d="M19 6v14a2 2 0 0 1-2 2H8"/></svg>คลังการ์ด</button>
+  <button data-tab="open" class="navpack"><span class="np"><svg viewBox="0 0 24 24"><path d="M6 3h12l-1 4H7zM7 7h10v14H7z"/><path d="M10 12l2-2 2 2-2 2z"/></svg></span>เปิดซอง</button>
   <button data-tab="progress"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>พัฒนาการ</button>
+  <button data-tab="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>ตั้งค่า</button>
 </div></nav>
 <div class="toast" id="toast"></div>
 <div id="ovl"></div>
@@ -936,9 +969,13 @@ let cardView='quest';
 function viewTabs(){return `<div class="chips" role="tablist">${[['quest','การ์ดภารกิจ'],['pack','การ์ดสะสม (ซอง)']].map(([k,l])=>`<button class="chip" data-cview="${k}" aria-pressed="${cardView===k}" style="flex:1">${l}</button>`).join('')}</div>`}
 function vPack(){const all=getPool().map(poolCard),got=all.filter(c=>c.got).length;
   return `<div><div class="eyebrow">การ์ดสะสม ${got} / ${all.length} ใบ</div><h1>คลังการ์ด</h1></div>${viewTabs()}
-  ${packBox()}${forgeBox()}<div class="prog"><i style="width:${got/all.length*100}%"></i></div>
+  <button class="btn" data-goto="open" style="width:100%">🪙 ${(C.coins||0).toLocaleString()} · ไปเปิดซอง</button><div class="prog"><i style="width:${got/all.length*100}%"></i></div>
   <div class="tiers">${TIERS.map(([t])=>{const n=all.filter(c=>c.tier===t),g=n.filter(c=>c.got).length;return `<span class="tier ${g?'got':''}">${t} ${g}/${n.length}</span>`}).join('')}</div>
   <div class="cards">${all.map(c=>cardHTML(c)).join('')}</div>`}
+function vSettings(){return vPlan()+`<h2>การ์ด</h2>${forgeBox()}
+  <div class="ex"><b>อัปโหลดรูปการ์ดทีละหลายรูป</b><div class="muted small">เลือกรูปทั้งหมดได้ในครั้งเดียว แอปจับคู่กับการ์ดจากชื่อไฟล์ เช่น Igniso_123.png, Pyroking_SAR_456.png</div>
+  <label class="btn sm" style="text-align:center">${DRV_BUSY?'กำลังอัปโหลด...':'เลือกรูป'}<input type="file" id="bulkin" accept="image/*" multiple hidden ${DRV_BUSY?'disabled':''}></label><div class="small" id="drvst" aria-live="polite">${esc(DRV_MSG)}</div></div>
+  ${UID?'<button class="btn ghost sm" id="logout">ออกจากระบบ</button>':''}<div class="muted small" style="text-align:center">เวอร์ชัน 8</div>`}
 function vCards(){
   if(cardView==='pack')return vPack();
   const all=buildCards(), got=all.filter(c=>c.got).length;
@@ -952,10 +989,55 @@ function vCards(){
   <div class="cards">${shown.map(c=>cardHTML(c)).join('')}</div>
   <div class="ex"><b>วิธีได้การ์ด</b><div class="list small">${TIERS.map(([t,n,l])=>`<div class="li"><span><span class="tier got">${t}</span> ${l}</span><span class="muted">เล่นท่านั้นครบ ${n} ครั้ง</span></div>`).join('')}</div>
   <div class="muted small">นับ 1 ครั้งต่อวัน เมื่อติ๊กเสร็จอย่างน้อย 1 เซ็ต · การ์ด SR และ SAR มีเอฟเฟกต์ประกาย</div>
-  <button class="btn ghost sm" id="preview">ดูตัวอย่างการ์ดทุกระดับ</button></div>
-  <div class="ex"><b>อัปโหลดรูปการ์ดทีละหลายรูป</b><div class="muted small">เลือกรูปทั้งหมดได้ในครั้งเดียว แอปจับคู่กับการ์ดจากชื่อไฟล์ เช่น Igniso_123.png, Pyroking_SAR_456.png</div>
-  <label class="btn sm" style="text-align:center">${DRV_BUSY?'กำลังอัปโหลด...':'เลือกรูป'}<input type="file" id="bulkin" accept="image/*" multiple hidden ${DRV_BUSY?'disabled':''}></label><div class="small" id="drvst" aria-live="polite">${esc(DRV_MSG)}</div></div>
-  ${UID?'<button class="btn ghost sm" id="logout">ออกจากระบบ</button>':''}<div class="muted small" style="text-align:center">เวอร์ชัน 7</div>`;
+  <button class="btn ghost sm" id="preview">ดูตัวอย่างการ์ดทุกระดับ</button></div>`;
+}
+
+/* ===== หน้าเปิดซองแบบเกม: ลากนิ้วกรีดหัวซอง → การ์ดซ้อนกัน แตะเพื่อดูทีละใบ ===== */
+let OPEN={stage:'pack',cards:[],idx:0};
+function drawPack(){
+  if((C.coins||0)<PACK_COST)return null;
+  C.coins-=PACK_COST;C.pulls=C.pulls||{};const res=[];
+  for(let i=0;i<PACK_SIZE;i++){const t=i===PACK_SIZE-1?rollTier(2):rollTier();
+    let opts=getPool().filter(p=>p.tier===t);if(!opts.length)opts=getPool();const p=opts[Math.floor(Math.random()*opts.length)];
+    const isNew=!C.pulls[p.id]&&!res.some(x=>x.id===p.id);C.pulls[p.id]=(C.pulls[p.id]||0)+1;if(!C.seen.includes(p.id))C.seen.push(p.id);res.push({...poolCard(p),isNew})}
+  persist('settings');
+  return res.sort((a,b)=>TIERS.findIndex(t=>t[0]===a.tier)-TIERS.findIndex(t=>t[0]===b.tier));
+}
+function vOpen(){
+  const c=C.coins||0,can=c>=PACK_COST;
+  if(OPEN.stage==='reveal'){const cur=OPEN.cards[OPEN.idx];
+    return `<div class="openwrap"><div class="openhead"><span class="muted">ใบที่ ${OPEN.idx+1}/${OPEN.cards.length}</span><span class="coin">🪙 ${c.toLocaleString()}</span></div>
+     <div class="stack" id="stack">${OPEN.cards.slice(OPEN.idx).reverse().map((x,i,a)=>`<div class="sc ${i===a.length-1?'top':''}" style="--d:${a.length-1-i}">${cardHTML({...x},true)}</div>`).join('')}</div>
+     <div class="openhint">${cur.isNew?'<b class="newtag">NEW</b> ':''}${TIERS.find(t=>t[0]===cur.tier)[2]} · ${esc(cur.mon)}</div>
+     <div class="muted small" style="text-align:center">แตะการ์ดเพื่อดูใบถัดไป</div></div>`}
+  if(OPEN.stage==='done')return `<div class="openwrap"><div class="openhead"><b>ได้การ์ด ${OPEN.cards.length} ใบ</b><span class="coin">🪙 ${c.toLocaleString()}</span></div>
+     <div class="cards">${OPEN.cards.map(x=>`<div style="position:relative">${cardHTML(x)}${x.isNew?'<span class="lockb" style="bottom:auto;top:4%;background:#ff5a1f">NEW</span>':''}</div>`).join('')}</div>
+     <div class="row" style="justify-content:center"><button class="btn ghost" id="opendone">กลับ</button>${can?'<button class="btn" id="openagain">เปิดอีกซอง</button>':''}</div></div>`;
+  return `<div class="openwrap"><div class="openhead"><div><div class="eyebrow">Booster</div><h1>เปิดซอง</h1></div><span class="coin big">🪙 ${c.toLocaleString()}</span></div>
+   <div class="packstage"><div class="pack2 ${can?'':'dim'}" id="pack2"><div class="ptop"><div class="cutline" id="cutline"></div></div>
+     <div class="pbody"><span class="pk1">REP LEDGER</span><span class="pk2">BOOSTER PACK</span><span class="pk3">${PACK_SIZE} CARDS</span></div></div></div>
+   <div class="openhint">${can?'ลากนิ้วข้ามหัวซองจากซ้ายไปขวาเพื่อกรีด':`coin ไม่พอ ต้องมี ${PACK_COST} · ออกกำลังกายเพื่อรับ coin`}</div>
+   <div class="muted small" style="text-align:center">ซองละ ${PACK_COST} coin · ${PACK_SIZE} ใบ · ใบสุดท้ายการันตี R ขึ้นไป</div>
+   <details class="small" style="text-align:center"><summary>อัตราการออกต่อใบ</summary><div class="tiers" style="justify-content:center;margin-top:6px">${RATES.map(([t,r])=>`<span class="tier got">${t} ${r}%</span>`).join('')}</div></details></div>`;
+}
+function burst(tier){const ti=TIERS.findIndex(t=>t[0]===tier),rc=RCOL[tier]||'#fff';if(ti<2)return;
+  const n=10+ti*14,cols=[rc,'#fff',ti>=4?'#8affef':rc,ti>=3?'#ffe27a':rc];const b=document.createElement('div');b.className='burst';b.style.setProperty('--rc',rc);
+  b.innerHTML=(ti>=3?'<div class="rays"></div>':'')+(ti>=5?'<div class="flash"></div>':'')+Array.from({length:n},()=>{const a=Math.random()*6.283,r=120+Math.random()*(160+ti*40);
+    return `<i style="--c:${cols[Math.random()*4|0]};--x:${Math.cos(a)*r}px;--y:${Math.sin(a)*r}px"></i>`}).join('');
+  document.body.appendChild(b);setTimeout(()=>b.remove(),2600);try{navigator.vibrate&&navigator.vibrate(ti>=5?[60,40,120]:[30])}catch(e){}}
+function wireOpen(){
+  const pk=document.getElementById('pack2');
+  if(pk&&!pk.classList.contains('dim')){let sx=null,done=false;const line=document.getElementById('cutline');
+    const top=()=>pk.getBoundingClientRect();
+    pk.onpointerdown=e=>{const r=top();if(e.clientY-r.top<r.height*.32){sx=e.clientX;pk.setPointerCapture(e.pointerId)}};
+    pk.onpointermove=e=>{if(sx==null||done)return;const r=top(),p=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));line.style.width=(p*100)+'%';
+      if(p>.92){done=true;tear()}};
+    pk.onpointerup=()=>{if(!done){sx=null;line.style.width='0'}};
+    const tear=()=>{const res=drawPack();if(!res)return;pk.classList.add('torn');try{navigator.vibrate&&navigator.vibrate(40)}catch(e){}
+      setTimeout(()=>{OPEN={stage:'reveal',cards:res,idx:0};render();burst(res[0].tier)},700)}}
+  const st=document.getElementById('stack');
+  if(st)st.onclick=()=>{const t=st.querySelector('.sc.top');if(!t)return;t.classList.add('fly');
+    setTimeout(()=>{OPEN.idx++;if(OPEN.idx>=OPEN.cards.length){OPEN.stage='done';render()}else{render();burst(OPEN.cards[OPEN.idx].tier)}},280)};
 }
 
 /* ---------- progress ---------- */
@@ -981,9 +1063,9 @@ function vProgress(){
 
 /* ---------- wiring ---------- */
 const toast=m=>{const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2000)};
-function render(){if(!ready)return;document.getElementById('app').innerHTML={today:vToday,plan:vPlan,cards:vCards,progress:vProgress}[tab]();
+function render(){if(!ready)return;document.getElementById('app').innerHTML={today:vToday,plan:vPlan,settings:vSettings,open:vOpen,cards:vCards,progress:vProgress}[tab]();if(tab==='open')wireOpen();document.body.classList.toggle('gamebg',tab==='open');
   document.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-current',b.dataset.tab===tab))}
-document.querySelector('nav').onclick=e=>{const b=e.target.closest('button');if(b){tab=b.dataset.tab;render();scrollTo(0,0)}};
+document.querySelector('nav').onclick=e=>{const b=e.target.closest('button');if(b){tab=b.dataset.tab;if(tab==='open'&&OPEN.stage==='done')OPEN={stage:'pack',cards:[],idx:0};render();scrollTo(0,0)}};
 const app=document.getElementById('app');
 app.addEventListener('click',e=>{
   const q=s=>e.target.closest(s);
@@ -997,6 +1079,9 @@ app.addEventListener('click',e=>{
   else if(el=q('[data-filter]')){cardFilter=el.dataset.filter;render()}
   else if(el=q('#logout')){logout()}
   else if(el=q('#openpack')){openPack()}
+  else if(el=q('[data-goto]')){tab=el.dataset.goto;OPEN={stage:'pack',cards:[],idx:0};render();scrollTo(0,0)}
+  else if(el=q('#openagain')){OPEN={stage:'pack',cards:[],idx:0};render()}
+  else if(el=q('#opendone')){OPEN={stage:'pack',cards:[],idx:0};tab='cards';cardView='pack';render()}
   else if(el=q('#forgego')){forgeRun()}
   else if(el=q('#forgestop')){FORGE.stop=true}
   else if(el=q('[data-cview]')){cardView=el.dataset.cview;render()}

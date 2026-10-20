@@ -955,7 +955,7 @@ function vCards(){
   <button class="btn ghost sm" id="preview">ดูตัวอย่างการ์ดทุกระดับ</button></div>
   <div class="ex"><b>อัปโหลดรูปการ์ดทีละหลายรูป</b><div class="muted small">เลือกรูปทั้งหมดได้ในครั้งเดียว แอปจับคู่กับการ์ดจากชื่อไฟล์ เช่น Igniso_123.png, Pyroking_SAR_456.png</div>
   <label class="btn sm" style="text-align:center">${DRV_BUSY?'กำลังอัปโหลด...':'เลือกรูป'}<input type="file" id="bulkin" accept="image/*" multiple hidden ${DRV_BUSY?'disabled':''}></label><div class="small" id="drvst" aria-live="polite">${esc(DRV_MSG)}</div></div>
-  ${UID?'<button class="btn ghost sm" id="logout">ออกจากระบบ</button>':''}`;
+  ${UID?'<button class="btn ghost sm" id="logout">ออกจากระบบ</button>':''}<div class="muted small" style="text-align:center">เวอร์ชัน 7</div>`;
 }
 
 /* ---------- progress ---------- */

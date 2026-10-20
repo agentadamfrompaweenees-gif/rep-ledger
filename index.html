@@ -185,11 +185,16 @@ select{background:var(--surface);width:100%}
 @keyframes flash{0%{opacity:.9}100%{opacity:0}}
 @keyframes fly{0%{transform:translate(0,0) rotate(0);opacity:1}100%{transform:translate(var(--x),var(--y)) rotate(540deg);opacity:0}}
 .ov .hint{color:#cfd6e4;font-size:14px}
-.card.sil .art img,.card.sil .art svg{filter:grayscale(1) brightness(.12) contrast(1.8)!important}
-.card.sil .art::before{content:"?";position:absolute;inset:0;display:grid;place-items:center;z-index:1;font-family:var(--display);font-weight:800;font-size:5em;color:rgba(255,255,255,.85);text-shadow:0 0 18px rgba(120,170,255,.8)}
-.card.sil .art::after{display:none}
-.card .lockb{position:absolute;left:50%;bottom:6%;transform:translateX(-50%);z-index:3;background:rgba(0,0,0,.75);color:#fff;font-size:1em;font-weight:700;padding:.2em .7em;border-radius:999px;white-space:nowrap}
-.card.sil.fa .art::before{align-items:start;padding-top:30%}
+.card.sil{background:#15181d!important;box-shadow:0 0 0 1px #2a2f37,0 2px 8px rgba(0,0,0,.4)}
+.card.sil>.in{filter:brightness(0);opacity:.92}
+.card.sil::after{display:none!important}
+.card.sil .lockb{background:#2b313b;border:1px solid #4a5260;color:#e8ecf2}
+.card.sil::before{content:"?";position:absolute;inset:0;display:grid;place-items:center;z-index:2;font-family:var(--display);font-weight:800;font-size:4em;color:rgba(255,255,255,.8);text-shadow:0 0 18px rgba(120,170,255,.8)}
+.pack{width:min(62vw,240px);aspect-ratio:5/8;border-radius:10px;border:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#fff;
+ background:linear-gradient(135deg,#1b2a6b,#5b2bb0 40%,#ff5a1f 70%,#ffd447);box-shadow:0 0 40px rgba(255,140,60,.6),inset 0 0 0 4px rgba(255,255,255,.35);animation:shake .5s ease-in-out infinite;position:relative;overflow:hidden}
+.pack::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.55) 45%,transparent 60%);background-size:300% 100%;animation:holo 3s linear infinite}
+.pack .pk1{font-family:var(--display);font-weight:800;font-size:28px;letter-spacing:.06em}.pack .pk2{font-weight:700;letter-spacing:.2em;font-size:12px}.pack .pk3{background:#fff;color:#111;border-radius:999px;padding:2px 12px;font-weight:800;font-size:12px}
+.packbox .btn:disabled{cursor:not-allowed}
 @keyframes pop{0%{transform:rotateY(90deg) scale(.6);opacity:0}100%{transform:none;opacity:1}}
 nav{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);z-index:20}
 nav .in{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
@@ -262,7 +267,7 @@ const POSES={
 };
 const POSE_KEYS=Object.keys(POSES);
 const KW=[['incline','incline'],['bench','bench'],['chest press','bench'],['overhead','ohp'],['shoulder press','ohp'],['military','ohp'],['pushdown','pushdown'],['tricep','pushdown'],['romanian','rdl'],['rdl','rdl'],['deadlift','deadlift'],['pulldown','pulldown'],['pull-up','pulldown'],['pull up','pulldown'],['row','row'],['curl','curl'],['bicep','curl'],['leg press','legpress'],['squat','squat'],['calf','calf'],['push-up','pushup'],['push up','pushup'],['lunge','lunge'],['plank','plank'],['raise','raise'],['fly','raise']];
-function poseOf(n,explicit){if(explicit&&POSES[explicit])return explicit;if(!explicit)for(const k in C.programs){const x=C.programs[k].ex.find(e=>e.n===n);if(x&&x.icon&&POSES[x.icon])return x.icon}const l=n.toLowerCase();const m=KW.find(([k])=>l.includes(k));return m?m[1]:'other'}
+function poseOf(n,explicit){if(typeof POOL_POSE!=='undefined'&&POOL_POSE[n])return POOL_POSE[n];if(explicit&&POSES[explicit])return explicit;if(!explicit)for(const k in C.programs){const x=C.programs[k].ex.find(e=>e.n===n);if(x&&x.icon&&POSES[x.icon])return x.icon}const l=n.toLowerCase();const m=KW.find(([k])=>l.includes(k));return m?m[1]:'other'}
 const poseSVG=k=>`<svg viewBox="0 0 64 64" aria-hidden="true">${POSES[k].svg}</svg>`;
 function showPose(n){const k=poseOf(n);document.getElementById('ovl').innerHTML=`<div class="ov" id="ovbg" role="dialog" aria-label="ท่า ${esc(n)}"><div class="title">${esc(n)}</div><div class="posebig">${poseSVG(k)}</div><div class="tips"><b>จุดสำคัญ</b><ul>${POSES[k].tips.map(t=>`<li>${t}</li>`).join('')}</ul></div><button class="btn" id="ovclose">ปิด</button></div>`;document.getElementById('ovclose').focus()}
 const FLAVOR=['ทุกครั้งที่ไม่อยากไป แต่ก็ไป','เหล็กไม่เคยโกหก','ความขี้เกียจแพ้ทางคนนี้','สร้างจากเหงื่อ ไม่ใช่โชค','วันพักไม่ใช่วันอู้'];
@@ -654,9 +659,9 @@ function artOld(name,type,tier){
 }
 const TYPE_TH={push:'ธาตุดัน',pull:'ธาตุดึง',legs:'ธาตุขา'};
 function cardHTML(c,big){
-  if(!c.got&&!big){const left=c.need-c.have;const h=cardHTML({...c,got:true});return h.replace('class="card','class="sil card').replace(/<\/button>$/,`<span class="lockb">อีก ${left} ครั้ง</span></button>`)}
+  if(!c.got&&!big){const left=c.need-c.have;const h=cardHTML({...c,got:true});return h.replace('class="card','class="sil card').replace(/<\/button>$/,`<span class="lockb">${c.pack?'สุ่มจากซอง':`อีก ${left} ครั้ง`}</span></button>`)}
   const tag=big?'div':'button', ty=MON[c.type]?c.type:'other', M=MON[ty], st=stageOf(c.tier), ti=TIERS.findIndex(t=>t[0]===c.tier);
-  const mon=SPEC(c.name,ty).names[st], en=`<span class="en">${M.sym[0]}</span>`, cost=st+1;
+  const mon=c.mon||SPEC(c.name,ty).names[st], en=`<span class="en">${M.sym[0]}</span>`, cost=st+1;
   const sym={C:'●',U:'◆',R:'★',RR:'★★',AR:'☆',SR:'☆☆',SAR:'☆☆☆',UR:'★★★'}[c.tier];
   const fa=FULLART.includes(c.tier)?' fa':'', exm=['RR','SR','SAR','UR'].includes(c.tier)?'<span class="exm">ex</span>':'';
   const no=String((hash(c.name)%90)+10).padStart(3,'0');
@@ -664,11 +669,61 @@ function cardHTML(c,big){
     <div class="top"><span class="stg">${['พื้นฐาน','ร่าง 1','ร่าง 2'][st]}</span><span class="nm">${mon}${exm}</span><span class="hp num"><small>HP</small>${c.hp}</span>${en}</div>
     <div class="art">${art(c.name,ty,c.tier)}</div>
     <div class="meta">มอนสเตอร์ธาตุ${M.el} · ${TIERS[ti][2]} · สูงสุด ${c.atk}</div>
-    <div class="atk">${Array.from({length:cost},()=>en).join('')}<span class="an">${ty==='other'?esc(c.name):SPEC(c.name,ty).skill}</span><span class="dmg num">${parseFloat(c.atk)||c.need*10}</span></div>
-    <div class="flv">${ty==='other'?'':`ท่าจริง: <b>${esc(c.name)}</b> · `}${c.flavor}</div>
+    <div class="atk">${Array.from({length:cost},()=>en).join('')}<span class="an">${c.pack?SPEC(c.mon,ty).skill.split(' ')[0]+' '+['Slam','Crush','Burst','Strike','Rush','Wave'][hash(c.mon)%6]:ty==='other'?esc(c.name):SPEC(c.name,ty).skill}</span><span class="dmg num">${parseFloat(c.atk)||c.need*10}</span></div>
+    <div class="flv">${ty==='other'||c.pack?'':`ท่าจริง: <b>${esc(c.name)}</b> · `}${c.flavor}</div>
     <div class="wrr"><span><b>จุดอ่อน</b>ความขี้เกียจ ×2</span><span><b>ต้านทาน</b>ข้ออ้าง −30</span><span><b>ถอย</b>${'●'.repeat(cost)}</span></div>
     <div class="foot"><span>Illus. Rep Ledger</span><span class="num">${no}/100 <span class="rar">${sym}</span> ${c.tier}</span></div></div></${tag}>`;
 }
+/* ===== ซองการ์ดสะสม: ได้ coin จากการออกกำลังกาย แล้วเอาไปเปิดซอง ซองละ 5 ใบ ===== */
+const PACK_COST=100, PACK_SIZE=5;
+const RATES=[['C',55],['U',25],['R',11],['RR',5],['AR',2.4],['SR',1.2],['SAR',0.3],['UR',0.1]]; // % ต่อ 1 ใบ
+const POOL_COUNT={C:24,U:18,R:12,RR:8,AR:6,SR:5,SAR:3,UR:2};
+const PP=['Flex','Grit','Pump','Rep','Lift','Core','Sweat','Iron','Titan','Sprint','Spark','Power','Brawn','Stamina','Tempo','Volt','Kettle','Plate','Chalk','Squat'];
+const PS=['ling','ox','ra','dillo','pup','fin','claw','horn','wing','bud','tail','maw','fang','rex','mon','zor'];
+const POOL_POSES=['bench','ohp','incline','deadlift','pulldown','row','curl','squat','rdl','legpress','calf','pushup','lunge','raise'];
+const POOL=(()=>{const out=[],used=new Set();let n=0;const types=['push','pull','legs','other'];
+  Object.entries(POOL_COUNT).forEach(([t,c])=>{for(let i=0;i<c;i++){n++;let h=hash('pool'+n),nm;
+    do{nm=PP[h%PP.length]+PS[(h>>>5)%PS.length];h=hash(nm+h)}while(used.has(nm));used.add(nm);
+    out.push({id:'p|'+String(n).padStart(3,'0'),no:n,key:'pk'+n,mon:nm,tier:t,type:types[(hash(nm)>>>3)%4],pose:POOL_POSES[(hash(nm)>>>7)%POOL_POSES.length]})}});
+  return out})();
+const POOL_POSE=Object.fromEntries(POOL.map(p=>[p.key,p.pose]));
+function poolCard(p){const ti=TIERS.findIndex(t=>t[0]===p.tier),have=(C.pulls||{})[p.id]||0;
+  return {id:p.id,group:'pack',pack:true,name:p.key,mon:p.mon,tier:p.tier,need:1,have,got:have>0,type:p.type,
+    hp:40+ti*30+(hash(p.mon)%4)*10,sub:'',atkName:'',atk:(20+ti*25+(hash(p.mon)%5)*5)+'',flavor:`การ์ดสะสมจากซอง · มีอยู่ ${have} ใบ`,foot:`#${String(p.no).padStart(3,'0')}`}}
+function rollTier(minIdx=0){let r=Math.random()*100,acc=0;const rs=RATES.slice(minIdx),tot=rs.reduce((a,x)=>a+x[1],0);r=r*tot/100;
+  for(const [t,w] of rs){acc+=w;if(r<acc)return t}return rs[0][0]}
+function openPack(){
+  if((C.coins||0)<PACK_COST){toast(`coin ไม่พอ ต้องมี ${PACK_COST}`);return}
+  C.coins-=PACK_COST;C.pulls=C.pulls||{};
+  const res=[];for(let i=0;i<PACK_SIZE;i++){const t=i===PACK_SIZE-1?rollTier(2):rollTier(); // ใบสุดท้ายการันตี R ขึ้นไป
+    const opts=POOL.filter(p=>p.tier===t);const p=opts[Math.floor(Math.random()*opts.length)];
+    const isNew=!C.pulls[p.id]&&!res.some(x=>x.id===p.id);C.pulls[p.id]=(C.pulls[p.id]||0)+1;if(!C.seen.includes(p.id))C.seen.push(p.id);res.push({...poolCard(p),isNew})}
+  persist('settings');
+  const order=res.map((c,i)=>[c,i]).sort((a,b)=>TIERS.findIndex(t=>t[0]===a[0].tier)-TIERS.findIndex(t=>t[0]===b[0].tier)).map(x=>x[0]);
+  const ov=document.getElementById('ovl');
+  ov.innerHTML=`<div class="ov" role="dialog" aria-label="เปิดซองการ์ด"><div class="title">ซองการ์ด Rep Ledger</div>
+   <button class="pack" id="packtear" aria-label="แตะเพื่อฉีกซอง"><span class="pk1">REP LEDGER</span><span class="pk2">BOOSTER PACK</span><span class="pk3">5 CARDS</span></button>
+   <div class="hint">แตะซองเพื่อฉีก</div></div>`;
+  document.getElementById('packtear').onclick=()=>{let i=0;const next=()=>{const c=order[i];
+    unlockFX(c,1,bt=>{const h=document.getElementById('hint');if(h&&c.isNew)h.textContent+=' · ใบใหม่!';
+      bt.textContent=i<order.length-1?`ถัดไป (${i+1}/${order.length})`:'ดูสรุป';
+      bt.onclick=ev=>{ev.stopPropagation();i++;if(i<order.length)next();else summary()}});
+    const t=document.querySelector('#ovl .title');if(t)t.textContent=`ใบที่ ${i+1}/${order.length}`};next()};
+  const summary=()=>{ov.innerHTML=`<div class="ov" id="ovbg" role="dialog" aria-label="สรุปซอง"><div class="title">ได้การ์ด ${order.length} ใบ</div>
+    <div class="cards" style="width:min(92vw,420px)">${order.map(c=>`<div style="position:relative">${cardHTML(c)}${c.isNew?'<span class="lockb" style="bottom:auto;top:4%;background:#ff5a1f">NEW</span>':''}</div>`).join('')}</div>
+    <div class="row" style="justify-content:center"><button class="btn ghost" id="ovclose" style="color:#fff;border-color:#fff6">ปิด</button>${(C.coins||0)>=PACK_COST?'<button class="btn" id="packagain">เปิดอีกซอง</button>':''}</div></div>`;render()};
+}
+function awardCoins(){
+  C.coinDays=C.coinDays||{};if(C.coinDays[TK]||!doneDay(TK))return;
+  const base=30+Math.floor(Math.random()*51), bonus=Math.min(streak()*5,50), amt=base+bonus;
+  C.coins=(C.coins||0)+amt;C.coinDays[TK]=amt;persist('settings');
+  setTimeout(()=>toast(`ได้ ${amt} coin! (สุ่ม ${base} + โบนัส Streak ${bonus})`),900);
+}
+function packBox(){const c=C.coins||0;return `<div class="ex packbox"><div class="row between"><div><div class="eyebrow">Coin</div><div class="streak num" style="font-size:32px">${c.toLocaleString()}</div></div>
+  <button class="btn" id="openpack" ${c<PACK_COST?'disabled style="opacity:.5"':''}>เปิดซอง · ${PACK_COST}</button></div>
+  <div class="muted small">ออกกำลังกายวันละครั้งได้ 30-80 coin แบบสุ่ม + โบนัส Streak วันละ 5 (สูงสุด 50) · ซองละ ${PACK_SIZE} ใบ ใบสุดท้ายการันตี R ขึ้นไป</div>
+  <details><summary class="small">อัตราการออกต่อใบ</summary><div class="tiers" style="margin-top:6px">${RATES.map(([t,r])=>`<span class="tier got">${t} ${r}%</span>`).join('')}</div></details></div>`}
+
 function buildCards(){
   const out=[]; const st=streak(), days=Object.keys(LOG).filter(doneDay).length;
   allExercises().forEach(n=>{const have=exCount(n),type=exType(n),b=best(n,'');
@@ -733,7 +788,7 @@ function unlockFX(c,count,after){
       return `<i style="--c:${cols[Math.random()*4|0]};--x:${Math.cos(a)*r}px;--y:${Math.sin(a)*r}px;animation-delay:${Math.random()*.2}s"></i>`}).join('');
     document.body.appendChild(b);setTimeout(()=>b.remove(),2600);
     try{navigator.vibrate&&navigator.vibrate(ti>=4?[60,40,60,40,120]:[40])}catch(e){}
-    document.getElementById('hint').textContent=`${TIERS[ti][2]} · ${c.name}`;
+    document.getElementById('hint').textContent=`${TIERS[ti][2]} · ${c.mon||c.name}`;
     const bt=document.getElementById('ovclose');bt.hidden=false;if(after)after(bt)};
   f.onclick=open; f.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}};
 }
@@ -742,7 +797,7 @@ function showCard(c,reveal,count){
   document.getElementById('ovl').innerHTML=`<div class="ov" id="ovbg" role="dialog" aria-label="การ์ด ${esc(c.name)}">
    ${reveal?`<div class="title">ได้การ์ดใหม่! ${c.tier}${count>1?` (+${count-1} ใบ)`:''}</div>`:''}
    <div class="big ${reveal?'reveal':''}">${c.got?cardHTML(c,true):cardHTML({...c,got:true,flavor:'ยังไม่ปลดล็อก · '+c.flavor},true).replace('class="card','class="sil card')}</div>
-   ${!c.got?`<div class="title" style="font-size:16px">เล่นอีก ${c.need-c.have} ครั้งเพื่อปลดล็อก</div>`:''}
+   ${!c.got?`<div class="title" style="font-size:16px">${c.pack?'ยังไม่มี · สุ่มได้จากซองการ์ด':`เล่นอีก ${c.need-c.have} ครั้งเพื่อปลดล็อก`}</div>`:''}
    <button class="btn" id="ovclose">${reveal?'เก็บเข้าคลัง':'ปิด'}</button></div>`;
   document.getElementById('ovclose').focus();
 }
@@ -811,15 +866,23 @@ function vPlan(){
 }
 
 /* ---------- card library ---------- */
+let cardView='quest';
+function viewTabs(){return `<div class="chips" role="tablist">${[['quest','การ์ดภารกิจ'],['pack','การ์ดสะสม (ซอง)']].map(([k,l])=>`<button class="chip" data-cview="${k}" aria-pressed="${cardView===k}" style="flex:1">${l}</button>`).join('')}</div>`}
+function vPack(){const all=POOL.map(poolCard),got=all.filter(c=>c.got).length;
+  return `<div><div class="eyebrow">การ์ดสะสม ${got} / ${all.length} ใบ</div><h1>คลังการ์ด</h1></div>${viewTabs()}
+  ${packBox()}<div class="prog"><i style="width:${got/all.length*100}%"></i></div>
+  <div class="tiers">${TIERS.map(([t])=>{const n=all.filter(c=>c.tier===t),g=n.filter(c=>c.got).length;return `<span class="tier ${g?'got':''}">${t} ${g}/${n.length}</span>`}).join('')}</div>
+  <div class="cards">${all.map(c=>cardHTML(c)).join('')}</div>`}
 function vCards(){
+  if(cardView==='pack')return vPack();
   const all=buildCards(), got=all.filter(c=>c.got).length;
   const groups=['all','milestone',...allExercises()];
   const shown=all.filter(c=>cardFilter==='all'||c.group===cardFilter);
   const byTier=TIERS.map(([t])=>[t,all.filter(c=>c.tier===t&&c.got).length]);
-  return `<div><div class="eyebrow">สะสมแล้ว ${got} / ${all.length} ใบ</div><h1>คลังการ์ด</h1></div>
+  return `<div><div class="eyebrow">สะสมแล้ว ${got} / ${all.length} ใบ</div><h1>คลังการ์ด</h1></div>${viewTabs()}
   <div class="prog"><i style="width:${got/all.length*100}%"></i></div>
   <div class="tiers">${byTier.map(([t,n])=>`<span class="tier ${n?'got':''}">${t} ×${n}</span>`).join('')}</div>
-  <div class="chips">${groups.map(g=>`<button class="chip" data-filter="${esc(g)}" aria-pressed="${cardFilter===g}">${g==='all'?'ทั้งหมด':g==='milestone'?'ความสำเร็จ':esc(g)}</button>`).join('')}</div>
+  <div class="chips">${groups.map(g=>`<button class="chip" data-filter="${esc(g)}" aria-pressed="${cardFilter===g}">${g==='all'?'ทั้งหมด':g==='milestone'?'ความสำเร็จ':g==='pack'?'การ์ดสะสม (ซอง)':esc(g)}</button>`).join('')}</div>
   <div class="cards">${shown.map(c=>cardHTML(c)).join('')}</div>
   <div class="ex"><b>วิธีได้การ์ด</b><div class="list small">${TIERS.map(([t,n,l])=>`<div class="li"><span><span class="tier got">${t}</span> ${l}</span><span class="muted">เล่นท่านั้นครบ ${n} ครั้ง</span></div>`).join('')}</div>
   <div class="muted small">นับ 1 ครั้งต่อวัน เมื่อติ๊กเสร็จอย่างน้อย 1 เซ็ต · การ์ด SR และ SAR มีเอฟเฟกต์ประกาย</div>
@@ -861,12 +924,14 @@ app.addEventListener('click',e=>{
   let el;
   if(el=q('[data-tick]')){const[ei,si]=el.dataset.tick.split('_').map(Number),ex=LOG[TK].sets[ei],s=ex.s[si];const b=best(ex.n);
     s.ok=!s.ok;dirtyToday=true;persist(TK);render();
-    if(s.ok){toast(+s.w>b&&b>0?`PR ใหม่! ${s.w} kg`:'บันทึกเซ็ตแล้ว');checkNewCards()}}
+    if(s.ok){toast(+s.w>b&&b>0?`PR ใหม่! ${s.w} kg`:'บันทึกเซ็ตแล้ว');checkNewCards();awardCoins()}}
   else if(el=q('[data-pose]')){showPose(el.dataset.pose)}
   else if(el=q('[data-cyc]')){const[k,i]=el.dataset.cyc.split('|');const x=C.programs[k].ex[i];const cur=x.icon&&POSES[x.icon]?x.icon:poseOf(x.n,'_');x.icon=POSE_KEYS[(POSE_KEYS.indexOf(cur)+1)%POSE_KEYS.length];persist('settings');render();toast('ภาพท่า: '+POSES[x.icon].th)}
   else if(el=q('[data-card]')){const c=buildCards().find(x=>x.id===el.dataset.card);if(c)showCard(c,false)}
   else if(el=q('[data-filter]')){cardFilter=el.dataset.filter;render()}
   else if(el=q('#logout')){logout()}
+  else if(el=q('#openpack')){openPack()}
+  else if(el=q('[data-cview]')){cardView=el.dataset.cview;render()}
   else if(el=q('#preview')){const n='Bench Press';let i=0;const show=()=>{const[t,need,l]=TIERS[i];unlockFX({id:'x',name:n,tier:t,need,have:need,got:true,type:'push',hp:80+i*20,sub:'ธาตุดัน · '+l,atkName:'ยกหนักสุด',atk:'80 kg',flavor:'การ์ดตัวอย่าง',foot:'ตัวอย่าง'},1,bt=>{
       bt.textContent=i<TIERS.length-1?'ถัดไป':'ปิด';bt.onclick=ev=>{ev.stopPropagation();i++;if(i<TIERS.length)show();else document.getElementById('ovl').innerHTML=''}})};show()}
   else if(el=q('#addprog')){const k='p'+Date.now().toString(36);C.programs[k]={name:'โปรแกรมใหม่',sub:'',ex:[{n:'ท่าใหม่',s:3,r:10}]};persist('settings');render()}
@@ -884,7 +949,7 @@ app.addEventListener('change',e=>{const d=e.target.dataset,v=e.target.value;
   else if(d.psub!==undefined){C.programs[d.psub].sub=v;persist('settings')}
   else if(d.ed){const[k,i,f]=d.ed.split('|');C.programs[k].ex[i][f]=f==='n'?(v.trim()||'ท่าใหม่'):Math.max(1,+v||1);persist('settings')}
 });
-document.getElementById('ovl').addEventListener('click',e=>{if(e.target.id==='ovclose'||e.target.id==='ovbg')document.getElementById('ovl').innerHTML='';
+document.getElementById('ovl').addEventListener('click',e=>{if(e.target.id==='packagain'){openPack();return}if(e.target.id==='ovclose'||e.target.id==='ovbg')document.getElementById('ovl').innerHTML='';
   const u=e.target.closest('[data-unart]');if(u){delete C.art[u.dataset.unart];persist('settings');document.getElementById('ovl').innerHTML='';render();toast('กลับไปใช้รูปเดิมแล้ว')}});
 document.getElementById('ovl').addEventListener('change',e=>{const k=e.target.dataset.up;if(k&&e.target.files[0])uploadArt(k,e.target.files[0])});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('ovl').innerHTML=''});

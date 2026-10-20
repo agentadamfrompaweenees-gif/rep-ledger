@@ -1,0 +1,892 @@
+<!doctype html>
+<html lang="th"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f1318">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Rep Ledger">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<title>Rep Ledger</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&display=swap">
+<style>
+/* Layout: single phone column, fixed bottom tab bar; trading cards are the one ornate element */
+:root{
+  --bg:#eef1f4; --surface:#ffffff; --fg:#14181f; --muted:#5d6774; --line:#d9dee5;
+  --accent:#ff5a1f; --accent-soft:#ffe6db; --good:#1f9d63; --warn:#c98a00; --down:#d23c3c;
+  --display:"Bricolage Grotesque","Anuphan",system-ui,sans-serif;
+  --body:"Anuphan",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1318; --surface:#181e26; --fg:#eef2f6; --muted:#9aa5b2; --line:#2a323d;
+  --accent:#ff7440; --accent-soft:#3a2117; --good:#3ccf8a; --warn:#f0b43c; --down:#ff6b6b; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1318; --surface:#181e26; --fg:#eef2f6; --muted:#9aa5b2; --line:#2a323d;
+  --accent:#ff7440; --accent-soft:#3a2117; --good:#3ccf8a; --warn:#f0b43c; --down:#ff6b6b; color-scheme:dark}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:480px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 100px;display:flex;flex-direction:column;gap:16px}
+h1,h2{font-family:var(--display);margin:0;text-wrap:balance}
+h1{font-size:28px;line-height:1.1} h2{font-size:18px}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.muted{color:var(--muted)} .small{font-size:12px}
+.num{font-variant-numeric:tabular-nums}
+button{font:inherit;cursor:pointer;border:0;border-radius:10px;color:inherit}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.btn{background:var(--accent);color:#fff;padding:12px 16px;font-weight:700}
+.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
+.btn.sm{padding:6px 10px;font-size:13px}
+.row{display:flex;gap:12px;align-items:center} .between{justify-content:space-between} .wrapr{flex-wrap:wrap}
+input,select{font:inherit;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);min-width:0}
+select{background:var(--surface);width:100%}
+.sync{font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:center}
+.sync i{width:8px;height:8px;border-radius:50%;background:var(--muted)} .sync.on i{background:var(--good)}
+/* hero */
+.hero{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center}
+.ring{width:96px;height:96px}
+.ring circle{fill:none;stroke-width:10}
+.ring .track{stroke:var(--line)} .ring .bar{stroke:var(--accent);stroke-linecap:round;transition:stroke-dashoffset .6s}
+.ring text{fill:var(--fg);font-family:var(--display);font-weight:800}
+.streak{font-family:var(--display);font-size:44px;font-weight:800;line-height:1;color:var(--accent)}
+.nudge{background:var(--accent-soft);border-radius:12px;padding:12px 14px;font-weight:600}
+.nudge.ok{background:transparent;border:1px solid var(--good);color:var(--good)}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center;font-size:12px}
+.day{padding:6px 0;border-radius:8px;border:1px solid var(--line);color:var(--muted)}
+.day.done{background:var(--good);border-color:var(--good);color:#fff;font-weight:700}
+.day.today{border:2px solid var(--accent);color:var(--fg);font-weight:700}
+.day.rest{border-style:dashed}
+/* exercise cards */
+.ex{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.ex.complete{border-color:var(--good)}
+.ex-head{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.ex-name{font-weight:700;font-size:16px}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px}
+.cmp>div{background:var(--bg);border-radius:8px;padding:6px 10px}
+.cmp b{display:block;font-size:15px;font-family:var(--display)}
+.up{color:var(--good)} .dn{color:var(--down)}
+.sets{display:flex;flex-direction:column;gap:6px}
+.set{display:grid;grid-template-columns:22px 58px 1fr 1fr 44px;gap:6px;align-items:center}
+.set input{width:100%;text-align:center;font-variant-numeric:tabular-nums}
+.set .idx{color:var(--muted);font-size:13px;text-align:center}
+.set .prev{font-size:12px;color:var(--muted);text-align:center;font-variant-numeric:tabular-nums;line-height:1.2}
+.tick{height:42px;background:var(--bg);border:1px solid var(--line);color:var(--muted);font-weight:800}
+.tick.on{background:var(--good);border-color:var(--good);color:#fff}
+.pr{font-size:11px;font-weight:700;background:var(--warn);color:#fff;border-radius:999px;padding:2px 8px}
+.prog{height:6px;background:var(--line);border-radius:99px;overflow:hidden}
+.prog>i{display:block;height:100%;background:var(--accent)}
+.list{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.edrow{display:grid;grid-template-columns:1fr 52px 52px 36px;gap:6px;align-items:center}
+.edrow input{width:100%} .edrow input[type=number]{text-align:center}
+.pose{flex:0 0 auto;width:56px;height:56px;border-radius:12px;background:var(--bg);border:1px solid var(--line);color:var(--fg);padding:4px;display:grid;place-items:center}
+.pose svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.pose svg .eq{stroke:var(--accent)}
+.pose.sm{width:40px;height:40px;padding:2px}
+.posebig{width:min(70vw,260px);aspect-ratio:1;background:var(--surface);color:var(--fg);border-radius:20px;padding:16px}
+.posebig svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.posebig svg .eq{stroke:var(--accent)}
+.tips{background:var(--surface);color:var(--fg);border-radius:14px;padding:12px 16px;width:min(86vw,340px)}
+.tips ul{margin:6px 0 0;padding-left:20px}
+.exhead2{display:flex;gap:12px;align-items:center}
+.edrow.wi{grid-template-columns:40px 1fr 48px 48px 32px}
+.x{background:transparent;color:var(--down);font-size:20px;height:40px}
+.chart{width:100%;height:auto} .chart text{fill:var(--muted);font-size:11px}
+/* ===== trading cards ===== */
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+/* การ์ดสไตล์เกมการ์ดมอนสเตอร์: กรอบเหลือง พื้นในสีตามธาตุ */
+.card{--c1:#f2c522;--c2:#ffe57a;--t1:#f7d7b8;--t2:#fff1e2;--tk:#d9541e;position:relative;aspect-ratio:63/88;max-width:100%;border-radius:4.5%/3.2%;padding:4.2%;
+  background:linear-gradient(160deg,var(--c2),var(--c1) 40%,var(--c2) 60%,var(--c1));color:#1a1a1a;display:flex;flex-direction:column;overflow:hidden;
+  box-shadow:0 2px 8px rgba(0,0,0,.3);font-size:clamp(6.5px,2.3vw,11px);cursor:pointer;text-align:left;width:100%;font-family:var(--body)}
+.card .in{flex:1;background:linear-gradient(180deg,var(--t1),var(--t2) 45%,var(--t1));border-radius:2.5%/1.8%;padding:3% 4%;display:flex;flex-direction:column;gap:2.2%;position:relative;z-index:1}
+.card .top{display:flex;align-items:center;gap:3%;font-weight:700}
+.card .stg{font-size:.62em;font-weight:800;font-style:italic;background:linear-gradient(90deg,#9aa3ad,#e7ebef);padding:.1em .5em;border-radius:1em;white-space:nowrap}
+.card .top .nm{flex:1;min-width:0;font-family:var(--display);font-size:1.3em;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .hp{font-family:var(--display);white-space:nowrap;font-size:1.15em;color:#c0281f} .card .hp small{font-size:.55em}
+.en{display:inline-grid;place-items:center;width:1.45em;height:1.45em;border-radius:50%;background:var(--tk);color:#fff;font-size:.8em;font-weight:800;box-shadow:inset 0 -2px 0 rgba(0,0,0,.25),0 0 0 1px rgba(255,255,255,.7);flex:0 0 auto}
+.en.cl{background:#e9e4d6;color:#666}
+.card .art{aspect-ratio:16/11;border:.35em solid;border-image:linear-gradient(135deg,#b48a2c,#fff0b0,#a77a1b,#f8e08e) 1;overflow:hidden;position:relative;box-shadow:0 2px 3px rgba(0,0,0,.35)}
+.card .art svg{width:100%;height:100%;display:block}
+.card .meta{font-size:.68em;font-style:italic;text-align:center;background:linear-gradient(90deg,#b8902e,#f6dd8a,#b8902e);color:#3a2a00;padding:.15em 0;margin:0 6%;border-radius:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .atk{display:flex;align-items:center;gap:3%;font-weight:800;padding-top:3%}
+.card .atk .an{flex:1;min-width:0;font-size:1.05em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .atk .dmg{font-family:var(--display);font-size:1.3em}
+.card .flv{font-size:.7em;color:#333;line-height:1.3;flex:1;border-bottom:1px solid rgba(0,0,0,.25);padding-bottom:2%}
+.card .wrr{display:grid;grid-template-columns:1fr 1fr 1fr;font-size:.6em;text-align:center;gap:2%;line-height:1.2}
+.card .wrr b{display:block;font-size:1.1em}
+.card .foot{display:flex;justify-content:space-between;font-size:.58em;font-weight:700;align-items:center;opacity:.85}
+.rar{font-family:var(--display);font-size:1.3em;letter-spacing:.05em}
+.card.ty-pull{--t1:#bcd7f7;--t2:#e9f3ff;--tk:#2c74d6}
+.card.ty-legs{--t1:#c9ebb6;--t2:#effae6;--tk:#3c9c3a}
+.card.ty-other{--t1:#d7dce2;--t2:#f3f5f7;--tk:#7a8592}
+.card.r-SR::after,.card.r-SAR::after{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;mix-blend-mode:color-dodge;opacity:.55;
+  background:linear-gradient(115deg,transparent 20%,#ff8ad8 35%,#8affef 45%,#fff79a 55%,transparent 70%);background-size:250% 250%;animation:holo 4s linear infinite}
+/* ระดับตามการ์ดยุค Scarlet & Violet: C/U/R กรอบเงิน · RR = ex โฮโล · AR/SR/SAR/UR = ภาพเต็มใบ */
+.card{--c1:#aab2bb;--c2:#f0f3f6}
+.card.r-R .art::after,.card.r-RR .art::after{content:"";position:absolute;inset:0;mix-blend-mode:overlay;background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.75) 45%,transparent 60%);background-size:300% 100%;animation:holo 5s linear infinite}
+.card.r-RR .art::after{mix-blend-mode:color-dodge;opacity:.6;background:linear-gradient(115deg,transparent 20%,#ff8ad8 35%,#8affef 45%,#fff79a 55%,transparent 70%);background-size:250% 250%}
+.card .exm{font-style:italic;font-weight:800;font-family:var(--display);color:#d6261f;text-shadow:-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff,0 0 3px #000;font-size:1.1em;margin-left:.15em}
+.card.fa{padding:3%}
+.card.fa .in{background:transparent;overflow:hidden;color:#fff}
+.card.fa .art{position:absolute;inset:0;border:0;aspect-ratio:auto;z-index:-1;box-shadow:none}
+.card.fa .meta{background:rgba(0,0,0,.35);color:#ffeaa6}
+.card.fa .flv{color:#fff;border-color:rgba(255,255,255,.4);flex:0}
+.card.fa .atk{margin-top:auto}
+.card.fa .top,.card.fa .wrr,.card.fa .foot,.card.fa .atk,.card.fa .flv{text-shadow:0 1px 3px #000}
+.card.fa .hp{color:#ffd166} .card.fa .stg{color:#111;text-shadow:none}
+.card.fa .in>*:not(.art){position:relative}
+.card,.card *{box-sizing:border-box}
+.card.fa .in::before{content:"";position:absolute;inset:auto 0 0 0;height:46%;background:linear-gradient(transparent,rgba(0,0,0,.72));z-index:0}
+.card.r-AR{--c1:#d9dee4;--c2:#fff}
+.card.r-AR .in{color:#1a1a1a} .card.r-AR .in::before{background:linear-gradient(transparent,rgba(255,255,255,.85))}
+.card.r-AR .top,.card.r-AR .wrr,.card.r-AR .foot,.card.r-AR .atk,.card.r-AR .flv{text-shadow:0 0 4px #fff;color:#1a1a1a} .card.r-AR .hp{color:#c0281f} .card.r-AR .flv{border-color:rgba(0,0,0,.25)}
+.card.r-SR{--c1:#b9c2cc;--c2:#f4f6f9}
+.card.r-SAR{--c1:#c9a24a;--c2:#fff2c4}
+.card.r-UR{--c1:#a9781c;--c2:#ffe9a0}
+.card.r-UR .art svg{filter:sepia(1) saturate(2.6) hue-rotate(-12deg) brightness(1.05) contrast(1.1)}
+.card.r-UR .in{color:#fff3c4}
+.card.r-UR .meta{background:linear-gradient(90deg,#7a5410,#d9a93a,#7a5410);color:#fff6d8}
+.card.r-UR::after,.card.r-SR::after,.card.r-SAR::after{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;mix-blend-mode:color-dodge;opacity:.55;background:linear-gradient(115deg,transparent 20%,#ff8ad8 35%,#8affef 45%,#fff79a 55%,transparent 70%);background-size:250% 250%;animation:holo 4s linear infinite}
+.card.r-UR::after{background:linear-gradient(115deg,transparent 25%,#fff3b0 45%,#ffd35a 50%,transparent 65%);background-size:250% 250%}
+.card.r-SR .art svg{filter:saturate(1.2)}
+@keyframes holo{0%{background-position:0% 0%}100%{background-position:250% 250%}}
+.card.locked{background:var(--surface);border:2px dashed var(--line);box-shadow:none;color:var(--muted);justify-content:center;align-items:center;text-align:center;padding:8%}
+.card.locked::after{display:none}
+.card.locked .q{font-family:var(--display);font-size:3em;line-height:1}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.chip{border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:13px;white-space:nowrap;background:var(--surface)}
+.chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.tiers{display:flex;gap:4px;flex-wrap:wrap}
+.tier{font-size:11px;padding:2px 6px;border-radius:4px;border:1px solid var(--line);color:var(--muted);font-weight:700}
+.tier.got{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+/* overlay */
+.ov{position:fixed;inset:0;background:rgba(5,8,12,.85);z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;padding-top:calc(24px + env(safe-area-inset-top,0px))}
+.ov .big{width:min(78vw,340px)} .ov .big .card{font-size:clamp(10px,3.3vw,15px);cursor:default}
+.ov .title{color:#fff;font-family:var(--display);font-size:22px;text-align:center}
+.ov .big.reveal{animation:pop .7s cubic-bezier(.2,1.4,.4,1)}
+.flip{position:relative;width:min(78vw,340px);aspect-ratio:63/88;perspective:1200px;cursor:pointer}
+.flip .face{position:absolute;inset:0;backface-visibility:hidden;transition:transform .8s cubic-bezier(.3,1.3,.5,1)}
+.flip .back{border-radius:4.5%/3.2%;overflow:hidden;box-shadow:0 0 34px var(--rc);background:#0d1a3a}
+.flip .back svg{width:100%;height:100%;display:block}
+.flip .back .sw{transform-origin:126px 176px;animation:spin 30s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.flip .front{transform:rotateY(180deg)} .flip .front .card{font-size:clamp(10px,3.3vw,15px);cursor:default;height:100%}
+.flip.wait .back{animation:shake var(--sp) ease-in-out infinite}
+.flip.open .back{transform:rotateY(-180deg)} .flip.open .front{transform:rotateY(0)}
+@keyframes shake{0%,100%{transform:rotate(0)}25%{transform:rotate(-3deg) scale(1.02)}75%{transform:rotate(3deg) scale(1.02)}}
+.burst{position:fixed;left:50%;top:50%;width:0;height:0;pointer-events:none;z-index:55}
+.burst .rays{position:absolute;left:-60vmax;top:-60vmax;width:120vmax;height:120vmax;border-radius:50%;background:repeating-conic-gradient(var(--rc) 0 6deg,transparent 6deg 18deg);opacity:0;animation:rays 2.4s ease-out forwards;mask:radial-gradient(circle,#000 10%,transparent 60%);-webkit-mask:radial-gradient(circle,#000 10%,transparent 60%)}
+.burst .flash{position:fixed;inset:0;background:#fff;opacity:0;animation:flash .6s ease-out}
+.burst i{position:absolute;width:10px;height:10px;border-radius:2px;background:var(--c);animation:fly 1.4s cubic-bezier(.1,.7,.3,1) forwards}
+@keyframes rays{0%{opacity:0;transform:scale(.3) rotate(0)}20%{opacity:.8}100%{opacity:0;transform:scale(1) rotate(60deg)}}
+@keyframes flash{0%{opacity:.9}100%{opacity:0}}
+@keyframes fly{0%{transform:translate(0,0) rotate(0);opacity:1}100%{transform:translate(var(--x),var(--y)) rotate(540deg);opacity:0}}
+.ov .hint{color:#cfd6e4;font-size:14px}
+@keyframes pop{0%{transform:rotateY(90deg) scale(.6);opacity:0}100%{transform:none;opacity:1}}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);z-index:20}
+nav .in{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+nav button{background:none;padding:12px 0 10px;color:var(--muted);font-size:12px;font-weight:600;border-radius:0}
+nav button[aria-current="true"]{color:var(--accent)}
+nav svg{display:block;margin:0 auto 2px;width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(80px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:700;opacity:0;transition:opacity .3s;pointer-events:none;max-width:90%;text-align:center;z-index:60}
+.toast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap" id="app"><p class="muted">กำลังโหลดข้อมูล...</p></div>
+<nav><div class="in">
+  <button data-tab="today"><svg viewBox="0 0 24 24"><path d="M6 4v16M18 4v16M3 8v8M21 8v8M6 12h12"/></svg>วันนี้</button>
+  <button data-tab="plan"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>แผน</button>
+  <button data-tab="cards"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="12" height="17" rx="2"/><path d="M19 6v14a2 2 0 0 1-2 2H8"/></svg>คลังการ์ด</button>
+  <button data-tab="progress"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>พัฒนาการ</button>
+</div></nav>
+<div class="toast" id="toast"></div>
+<div id="ovl"></div>
+
+<script>
+const DAYS=['อา','จ','อ','พ','พฤ','ศ','ส'];
+const TIERS=[['C',1,'Common'],['U',5,'Uncommon'],['R',10,'Rare'],['RR',20,'Double Rare'],['AR',35,'Art Rare'],['SR',50,'Super Rare'],['SAR',100,'Special Art Rare'],['UR',150,'Ultra Rare']];
+const FULLART=['AR','SR','SAR','UR'];
+const TYPECOL={push:['#ff7a3d','#ffd0a8'],pull:['#3d7dff','#bcd6ff'],legs:['#2bb673','#c2f2d6']};
+const DEFAULT={
+ programs:{
+  push:{name:'Push',sub:'อก / ไหล่ / หลังแขน',ex:[{n:'Bench Press',s:4,r:8},{n:'Overhead Press',s:3,r:10},{n:'Incline DB Press',s:3,r:10},{n:'Tricep Pushdown',s:3,r:12}]},
+  pull:{name:'Pull',sub:'หลัง / หน้าแขน',ex:[{n:'Deadlift',s:3,r:5},{n:'Lat Pulldown',s:4,r:10},{n:'Seated Row',s:3,r:10},{n:'Bicep Curl',s:3,r:12}]},
+  legs:{name:'Legs',sub:'ขา / ก้น',ex:[{n:'Squat',s:4,r:8},{n:'Romanian Deadlift',s:3,r:10},{n:'Leg Press',s:3,r:12},{n:'Calf Raise',s:3,r:15}]}},
+ plan:{0:'rest',1:'push',2:'pull',3:'legs',4:'rest',5:'push',6:'pull'},weekGoal:4,seen:[],art:{}
+};
+/* ท่าตัวอย่าง: stick figure ด้านข้าง viewBox 64x64 · class eq = อุปกรณ์ */
+const POSES={
+ bench:{th:'Bench Press',tips:['นอนให้ตาอยู่ใต้บาร์','บีบสะบักเข้าหากัน เท้าวางแน่นกับพื้น','ลดบาร์ลงแตะกลางอก แล้วดันขึ้น'],
+  svg:'<path class="eq" d="M10 46h40M16 46v12M44 46v12M14 22h22"/><circle class="eq" cx="14" cy="22" r="4"/><circle class="eq" cx="36" cy="22" r="4"/><circle cx="14" cy="40" r="4"/><path d="M18 42h22l8 8v8M25 42V22"/>'},
+ ohp:{th:'Overhead Press',tips:['ยืนกว้างเท่าไหล่ เกร็งท้องและก้น','ดันบาร์ขึ้นตรงเหนือหัว','อย่าแอ่นหลังตอนดัน'],
+  svg:'<path class="eq" d="M12 6h40"/><circle class="eq" cx="12" cy="6" r="4"/><circle class="eq" cx="52" cy="6" r="4"/><circle cx="32" cy="14" r="4"/><path d="M32 18v20l-6 20M32 38l6 20M32 22l-10-6V6M32 22l10-6V6"/>'},
+ incline:{th:'Incline Press',tips:['ตั้งม้านั่งเอียง 30-45 องศา','ลดดัมเบลลงข้างอกส่วนบน','ดันขึ้นให้ดัมเบลมาชิดกันด้านบน'],
+  svg:'<path class="eq" d="M14 50L30 22M30 50h12M22 50v8M40 50v8M30 12h10"/><circle cx="30" cy="18" r="4"/><path d="M28 22L18 44l16 2 2 12M25 28l10-14"/>'},
+ pushdown:{th:'Tricep Pushdown',tips:['ศอกแนบลำตัว ห้ามขยับ','กดลงจนแขนตึงสุด','ค่อยๆ ปล่อยขึ้นช้าๆ'],
+  svg:'<path class="eq" d="M52 2v52M52 8L42 38"/><circle class="eq" cx="52" cy="8" r="3"/><circle cx="28" cy="12" r="4"/><path d="M28 16v22l-4 20M28 38l4 20M28 20l4 12 10 6"/>'},
+ deadlift:{th:'Deadlift',tips:['บาร์ชิดหน้าแข้ง หลังตรง','ดันพื้นด้วยขา ดึงบาร์ขึ้นแนบตัว','ยืนตรงแล้วบีบก้น อย่าแอ่นหลัง'],
+  svg:'<circle class="eq" cx="36" cy="50" r="8"/><circle cx="46" cy="18" r="4"/><path d="M22 32l20-10M22 32l8 12-4 14M40 24l-4 26"/>'},
+ pulldown:{th:'Lat Pulldown',tips:['จับบาร์กว้างกว่าไหล่','ดึงบาร์ลงมาที่อกส่วนบน','อกยืดขึ้น อย่าเอนหลังเยอะ'],
+  svg:'<path class="eq" d="M30 0v8M12 8h36M18 48h24"/><circle cx="30" cy="22" r="4"/><path d="M30 26v20h14v12M30 30l-10-10V8M30 30l10-10V8"/>'},
+ row:{th:'Seated Row',tips:['นั่งหลังตรง เข่างอเล็กน้อย','ดึงมือเข้าหาท้อง บีบสะบัก','ปล่อยกลับช้าๆ'],
+  svg:'<path class="eq" d="M40 36h22M46 44v14"/><circle cx="20" cy="20" r="4"/><path d="M20 24l2 22h16l6 4M21 30l12 6h7"/><path class="eq" d="M10 48h16"/>'},
+ curl:{th:'Bicep Curl',tips:['ศอกแนบลำตัว','ม้วนดัมเบลขึ้นหาไหล่','อย่าเหวี่ยงตัวช่วย'],
+  svg:'<path class="eq" d="M36 20l8 8"/><circle cx="28" cy="12" r="4"/><path d="M28 16v22l-4 20M28 38l4 20M28 20v12l12-8"/>'},
+ squat:{th:'Squat',tips:['วางบาร์บนบ่า เท้ากว้างเท่าไหล่','ย่อลงเหมือนนั่งเก้าอี้ เข่าไปทางเดียวกับปลายเท้า','ลงจนต้นขาขนานพื้น แล้วดันขึ้น'],
+  svg:'<circle class="eq" cx="26" cy="20" r="5"/><circle cx="32" cy="12" r="4"/><path d="M28 17l-8 17h16l-4 22M27 22l6 6"/>'},
+ rdl:{th:'Romanian Deadlift',tips:['เข่างอนิดเดียว','ดันสะโพกไปด้านหลัง ลดบาร์ลงตามขา','รู้สึกตึงหลังขาแล้วดึงขึ้น'],
+  svg:'<circle class="eq" cx="44" cy="48" r="6"/><circle cx="50" cy="22" r="4"/><path d="M24 30l22-6M24 30l2 14-2 14M44 26v16"/>'},
+ legpress:{th:'Leg Press',tips:['หลังแนบเบาะตลอด','เท้าวางกลางแป้นกว้างเท่าไหล่','ดันออกโดยไม่ล็อกเข่าสุด'],
+  svg:'<path class="eq" d="M6 30l12 22M48 26l10 20"/><circle cx="12" cy="24" r="4"/><path d="M14 28l8 18 14-12 14 4"/>'},
+ calf:{th:'Calf Raise',tips:['ยืนบนขอบสเต็ป ส้นเท้าลอย','เขย่งขึ้นสุด ค้าง 1 วินาที','ลดส้นต่ำกว่าขอบให้น่องยืด'],
+  svg:'<path class="eq" d="M20 54h22v6M52 34V18M46 24l6-6 6 6"/><circle cx="32" cy="10" r="4"/><path d="M32 14v22l-2 14-4 4M32 36l2 14 4 4"/>'},
+ pushup:{th:'Push-up',tips:['ลำตัวตรงเป็นแนวเดียว','ลดอกลงใกล้พื้น','ดันขึ้นโดยไม่ให้สะโพกตก'],
+  svg:'<path class="eq" d="M4 58h56"/><circle cx="50" cy="34" r="4"/><path d="M46 36L10 54M42 38l2 20"/>'},
+ lunge:{th:'Lunge',tips:['ก้าวยาว ลำตัวตั้งตรง','ย่อลงจนเข่าหลังเกือบแตะพื้น','ดันส้นเท้าหน้ากลับขึ้น'],
+  svg:'<circle cx="30" cy="10" r="4"/><path d="M30 14v20l12 8v16M30 34l-12 14-6 0"/>'},
+ plank:{th:'Plank',tips:['ศอกอยู่ใต้ไหล่','เกร็งท้อง ตัวตรง','หายใจปกติ อย่ากลั้น'],
+  svg:'<path class="eq" d="M4 58h56"/><circle cx="50" cy="40" r="4"/><path d="M46 42L10 54M44 44v8h4"/>'},
+ raise:{th:'Lateral Raise',tips:['ยกดัมเบลออกด้านข้างถึงระดับไหล่','ศอกงอนิดหน่อย','ลดลงช้าๆ'],
+  svg:'<path class="eq" d="M8 18v6M56 18v6"/><circle cx="32" cy="10" r="4"/><path d="M32 14v24l-6 20M32 38l6 20M32 20H8M32 20h24"/>'},
+ other:{th:'ท่าทั่วไป',tips:['วอร์มอัพเบาๆ ก่อน 1 เซ็ต','ทำช้าๆ ควบคุมทุกครั้ง','เลือกภาพท่าได้ในแท็บแผน'],
+  svg:'<path class="eq" d="M16 32h32M16 22v20M48 22v20M10 26v12M54 26v12"/>'}
+};
+const POSE_KEYS=Object.keys(POSES);
+const KW=[['incline','incline'],['bench','bench'],['chest press','bench'],['overhead','ohp'],['shoulder press','ohp'],['military','ohp'],['pushdown','pushdown'],['tricep','pushdown'],['romanian','rdl'],['rdl','rdl'],['deadlift','deadlift'],['pulldown','pulldown'],['pull-up','pulldown'],['pull up','pulldown'],['row','row'],['curl','curl'],['bicep','curl'],['leg press','legpress'],['squat','squat'],['calf','calf'],['push-up','pushup'],['push up','pushup'],['lunge','lunge'],['plank','plank'],['raise','raise'],['fly','raise']];
+function poseOf(n,explicit){if(explicit&&POSES[explicit])return explicit;if(!explicit)for(const k in C.programs){const x=C.programs[k].ex.find(e=>e.n===n);if(x&&x.icon&&POSES[x.icon])return x.icon}const l=n.toLowerCase();const m=KW.find(([k])=>l.includes(k));return m?m[1]:'other'}
+const poseSVG=k=>`<svg viewBox="0 0 64 64" aria-hidden="true">${POSES[k].svg}</svg>`;
+function showPose(n){const k=poseOf(n);document.getElementById('ovl').innerHTML=`<div class="ov" id="ovbg" role="dialog" aria-label="ท่า ${esc(n)}"><div class="title">${esc(n)}</div><div class="posebig">${poseSVG(k)}</div><div class="tips"><b>จุดสำคัญ</b><ul>${POSES[k].tips.map(t=>`<li>${t}</li>`).join('')}</ul></div><button class="btn" id="ovclose">ปิด</button></div>`;document.getElementById('ovclose').focus()}
+const FLAVOR=['ทุกครั้งที่ไม่อยากไป แต่ก็ไป','เหล็กไม่เคยโกหก','ความขี้เกียจแพ้ทางคนนี้','สร้างจากเหงื่อ ไม่ใช่โชค','วันพักไม่ใช่วันอู้'];
+const QUOTES=['ไม่ต้องอยากไป แค่ไปก็พอ','เซ็ตแรกยากสุด ที่เหลือง่ายแล้ว','แค่ 30 นาที ดีกว่า 0 นาที','การ์ดใบต่อไปรออยู่ที่ยิม'];
+
+const pad=n=>String(n).padStart(2,'0');
+const iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const today=new Date(), TK=iso(today);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const thDate=k=>new Date(k+'T00:00').toLocaleDateString('th-TH',{day:'numeric',month:'short'});
+
+let C=JSON.parse(JSON.stringify(DEFAULT)); // settings
+let LOG={};                                  // date -> {type,sets:[{n,target,s:[{w,r,ok}]}]}
+let tab='today', pick=null, cardFilter='all', store=null, ready=false;
+
+/* ---------- storage: claude db (sync across devices) with local fallback ---------- */
+const local={get(){try{return JSON.parse(localStorage.getItem('repledger2')||'null')}catch(e){return null}},
+  put(){try{localStorage.setItem('repledger2',JSON.stringify({C,LOG}))}catch(e){}}};
+/* ข้อมูลเก็บบน Supabase: ตาราง app_docs (1 แถวต่อ settings หรือ 1 วัน) + สำเนาในเครื่อง */
+const timers={};let SB=null,UID=null;
+function persist(key){
+  local.put();
+  if(!SB||!UID)return;
+  clearTimeout(timers[key]);
+  timers[key]=setTimeout(async()=>{
+    const body=key==='settings'?{kind:'settings',...C}:{kind:'log',date:key,...LOG[key]};
+    const {error}=await SB.from('app_docs').upsert({user_id:UID,key:key==='settings'?'settings':'d'+key,data:JSON.parse(JSON.stringify(body)),updated_at:new Date().toISOString()});
+    if(error){syncState(false);toast('บันทึกขึ้นคลาวด์ไม่สำเร็จ เก็บไว้ในเครื่องก่อน')}else syncState(true);
+  },600);
+}
+async function pull(){
+  if(!SB||!UID)return;
+  const {data,error}=await SB.from('app_docs').select('key,data');
+  if(error){syncState(false);return}
+  if(!data.length&&Object.keys(LOG).length){persist('settings');Object.keys(LOG).forEach(persist)}
+  else data.forEach(({data:v})=>{if(!v)return;
+    if(v.kind==='settings'){const{kind,...rest}=v;C={...DEFAULT,...rest}}
+    else if(v.kind==='log'&&(v.date!==TK||!dirtyToday)){const{kind,date,...rest}=v;LOG[date]=rest}});
+  local.put();syncState(true);
+  if(!document.activeElement||document.activeElement.tagName!=='INPUT')render();
+}
+function signedIn(s){
+  if(!s||UID===s.user.id)return;
+  UID=s.user.id;document.querySelector('nav').hidden=false;ready=true;render();pull();
+}
+async function boot(){
+  const l=local.get(); if(l){C={...C,...l.C};LOG=l.LOG||{}}
+  if(!window.SUPABASE_URL||!window.supabase||SUPABASE_URL.includes('YOUR')){ready=true;render();syncState(false);return}
+  SB=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+  SB.auth.onAuthStateChange((ev,s)=>{if(s)signedIn(s)});
+  const {data:{session}}=await SB.auth.getSession();
+  if(session)signedIn(session);else showLogin();
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pull()});
+  window.addEventListener('online',()=>{persist('settings');pull()});
+}
+function showLogin(msg){
+  document.querySelector('nav').hidden=true;
+  document.getElementById('app').innerHTML=`<div style="display:grid;gap:14px;padding-top:12vh">
+   <div><div class="eyebrow">Rep Ledger</div><h1>เข้าสู่ระบบ</h1><div class="muted">ใช้อีเมลกับรหัสผ่านเดียวกันทุกเครื่อง ข้อมูลจะซิงก์กัน</div></div>
+   <form id="login" style="display:grid;gap:10px">
+    <input id="lemail" type="email" autocomplete="email" placeholder="อีเมล" required>
+    <input id="lpass" type="password" autocomplete="current-password" placeholder="รหัสผ่าน (อย่างน้อย 6 ตัว)" minlength="6" required>
+    <button class="btn" type="submit">เข้าสู่ระบบ</button>
+    <button class="btn ghost" type="button" id="lsignup">สมัครครั้งแรก</button>
+   </form><div class="small" id="lmsg" aria-live="polite">${msg||''}</div></div>`;
+  const m=t=>{document.getElementById('lmsg').textContent=t};
+  document.getElementById('login').onsubmit=async e=>{e.preventDefault();m('กำลังเข้าสู่ระบบ...');
+    const {error}=await SB.auth.signInWithPassword({email:lemail.value.trim(),password:lpass.value});if(error)m('เข้าสู่ระบบไม่สำเร็จ: '+error.message)};
+  document.getElementById('lsignup').onclick=async()=>{if(!lemail.value||lpass.value.length<6){m('ใส่อีเมลและรหัสผ่านอย่างน้อย 6 ตัวก่อน');return}
+    m('กำลังสมัคร...');const {data,error}=await SB.auth.signUp({email:lemail.value.trim(),password:lpass.value});
+    if(error)m('สมัครไม่สำเร็จ: '+error.message);else if(!data.session)m('สมัครแล้ว เช็กอีเมลเพื่อยืนยัน แล้วกลับมากด "เข้าสู่ระบบ"')};
+}
+async function logout(){await SB.auth.signOut();UID=null;try{localStorage.removeItem('repledger2')}catch(e){}location.reload()}
+let dirtyToday=false, synced=false;
+function syncState(on){synced=on;const el=document.getElementById('sync');if(el){el.className='sync'+(on?' on':'');el.lastChild.textContent=on?' ซิงก์ทุกเครื่องแล้ว':' เก็บในเครื่องนี้เท่านั้น'}}
+
+/* ---------- stats ---------- */
+const prog=t=>C.programs[t];
+const progName=t=>t==='rest'?'วันพัก':(prog(t)?prog(t).name:'ไม่ทราบ');
+function doneDay(d){const l=LOG[d];return !!(l&&l.sets&&l.sets.some(e=>e.s.some(s=>s.ok)))}
+function okSets(e){return e.s.filter(s=>s.ok)}
+function vol(e){return okSets(e).reduce((a,s)=>a+(+s.w||0)*(+s.r||0),0)}
+function prevEntry(name){const ds=Object.keys(LOG).filter(d=>d<TK).sort().reverse();
+  for(const d of ds){const e=LOG[d].sets.find(x=>x.n===name);if(e&&okSets(e).length)return{d,e}}return null}
+function best(name,excl=TK){let b=0;for(const d in LOG){if(d===excl)continue;const e=LOG[d].sets.find(x=>x.n===name);if(e)okSets(e).forEach(s=>{if(+s.w>b)b=+s.w})}return b}
+function exCount(name){let n=0;for(const d in LOG){const e=LOG[d].sets.find(x=>x.n===name);if(e&&okSets(e).length)n++}return n}
+function exType(name){for(const k in C.programs)if(C.programs[k].ex.some(x=>x.n===name))return k;return 'push'}
+function streak(){let n=0;const d=new Date(today);if(!doneDay(TK))d.setDate(d.getDate()-1);
+  for(let i=0;i<400;i++){if(doneDay(iso(d)))n++;else if(C.plan[d.getDay()]!=='rest')break;d.setDate(d.getDate()-1)}return n}
+function weekDone(){const s=new Date(today);s.setDate(s.getDate()-s.getDay());let n=0;for(let i=0;i<7;i++){const d=new Date(s);d.setDate(s.getDate()+i);if(doneDay(iso(d)))n++}return n}
+function allExercises(){const set=new Set();Object.values(C.programs).forEach(p=>p.ex.forEach(e=>set.add(e.n)));Object.values(LOG).forEach(l=>l.sets.forEach(e=>set.add(e.n)));return [...set]}
+
+/* ---------- cards ---------- */
+function hash(s){let h=7;for(const c of s)h=(h*31+c.charCodeAt(0))>>>0;return h}
+/* มอนสเตอร์ประจำธาตุ 3 ร่าง (วิวัฒนาการตามระดับการ์ด) */
+const MON={push:{n:['Embell','Blazbell','Infernox'],el:'ไฟ',sym:'ไฟ',m:'#ff7a2f',d:'#c8401a',l:'#ffd29a',weak:'น้ำ',res:'หญ้า'},
+ pull:{n:['Ripplet','Tidalift','Krakenrow'],el:'น้ำ',sym:'น้ำ',m:'#3f8ee8',d:'#1e58a8',l:'#bfe1ff',weak:'หญ้า',res:'ไฟ'},
+ legs:{n:['Sproutox','Barkquat','Titanroot'],el:'หญ้า',sym:'หญ้า',m:'#4cb050',d:'#2a7a32',l:'#d6f5b0',weak:'ไฟ',res:'น้ำ'},
+ other:{n:['Boltpup','Ironhound','Steelmajor'],el:'เหล็ก',sym:'เหล็ก',m:'#8d99a6',d:'#56606b',l:'#e3e8ee',weak:'ไฟ',res:'หญ้า'}};
+const stageOf=t=>t==='C'||t==='U'||t==='AR'?0:t==='R'||t==='RR'?1:2;
+function scene(type,id,full){
+  if(type==='push')return `<defs><linearGradient id="s${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb35c"/><stop offset=".6" stop-color="#ff6a3d"/><stop offset="1" stop-color="#8e2a2a"/></linearGradient></defs><rect width="160" height="${full}" fill="url(#s${id})"/><circle cx="120" cy="30" r="18" fill="#ffe08a" opacity=".8"/><path d="M0 ${full*.75}L30 ${full*.45}L55 ${full*.7}L85 ${full*.38}L120 ${full*.72}L160 ${full*.5}V${full}H0Z" fill="#6b1f22"/><path d="M82 ${full*.4}l3 10-6 8 5 10" stroke="#ffb100" stroke-width="2" fill="none"/><rect y="${full*.82}" width="160" height="${full*.18}" fill="#3a1414"/>`;
+  if(type==='pull')return `<defs><linearGradient id="s${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fe0ff"/><stop offset=".55" stop-color="#4aa8f0"/><stop offset="1" stop-color="#16407d"/></linearGradient></defs><rect width="160" height="${full}" fill="url(#s${id})"/><circle cx="30" cy="24" r="10" fill="#fff" opacity=".7"/><path d="M0 ${full*.62}q20 -8 40 0t40 0 40 0 40 0V${full}H0Z" fill="#2a6fc0"/><path d="M0 ${full*.74}q20 -8 40 0t40 0 40 0 40 0V${full}H0Z" fill="#1d55a0"/><path d="M10 ${full*.66}q10-4 20 0M110 ${full*.7}q10-4 20 0" stroke="#cfeeff" stroke-width="2" fill="none"/>`;
+  if(type==='legs')return `<defs><linearGradient id="s${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9f6ff"/><stop offset=".6" stop-color="#a6e39a"/><stop offset="1" stop-color="#3f8a3a"/></linearGradient></defs><rect width="160" height="${full}" fill="url(#s${id})"/><ellipse cx="30" cy="${full*.7}" rx="60" ry="${full*.2}" fill="#6cbf5c"/><ellipse cx="140" cy="${full*.72}" rx="60" ry="${full*.2}" fill="#58ad4c"/><circle cx="18" cy="${full*.45}" r="12" fill="#2f7d34"/><rect x="16" y="${full*.45}" width="4" height="${full*.2}" fill="#6b4a2b"/><circle cx="144" cy="${full*.42}" r="14" fill="#2f7d34"/><rect x="142" y="${full*.42}" width="4" height="${full*.22}" fill="#6b4a2b"/><rect y="${full*.84}" width="160" height="${full*.16}" fill="#3a7a34"/>`;
+  return `<defs><linearGradient id="s${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e6ebf0"/><stop offset="1" stop-color="#8d99a6"/></linearGradient></defs><rect width="160" height="${full}" fill="url(#s${id})"/><path d="M0 ${full*.3}h160M0 ${full*.55}h160M40 0v${full*.84}M120 0v${full*.84}" stroke="#fff" opacity=".4"/><rect y="${full*.84}" width="160" height="${full*.16}" fill="#56606b"/>`;
+}
+function monster(type,st,cy){
+  const M=MON[type]||MON.other, s=1+st*.14, c=`translate(80 ${cy}) scale(${s})`;
+  const feat={push:[`<path d="M-14 -22l-6 -14 12 8zM14 -22l6 -14 -12 8z" fill="${M.d}"/>`,`<path d="M-14 -22l-10 -20 14 10zM14 -22l10 -20 -14 10z" fill="${M.d}"/><path d="M24 8q18 -2 16 -22q-4 10 -12 8q6 -10 -2 -18q0 14 -6 16z" fill="#ffc23a"/>`,`<path d="M-14 -22l-12 -26 16 12zM14 -22l12 -26 -16 12z" fill="${M.d}"/><path d="M-26 -6q-30 -26 -24 6q8 -6 24 8zM26 -6q30 -26 24 6q-8 -6 -24 8z" fill="${M.d}" opacity=".9"/><path d="M24 8q22 -2 18 -28q-4 12 -12 8q6 -12 -2 -20q0 16 -6 18z" fill="#ffd85a"/>`],
+    pull:[`<path d="M-24 -6l-12 -8 4 14zM24 -6l12 -8 -4 14z" fill="${M.l}"/>`,`<path d="M-24 -6l-16 -12 4 18zM24 -6l16 -12 -4 18z" fill="${M.l}"/><path d="M-6 -26q6 -12 12 0z" fill="${M.d}"/>`,`<path d="M-24 -6l-20 -16 4 22zM24 -6l20 -16 -4 22z" fill="${M.l}"/><path d="M-10 -26q10 -20 20 0z" fill="${M.d}"/><path d="M-22 18q-14 10 -6 18M22 18q14 10 6 18M-12 22q-6 12 2 16M12 22q6 12 -2 16" stroke="${M.d}" stroke-width="5" fill="none" stroke-linecap="round"/>`],
+    legs:[`<path d="M0 -24q-2 -12 -10 -14q8 0 10 8q2 -10 12 -10q-10 4 -12 16z" fill="#6fd36a" stroke="${M.d}"/>`,`<path d="M0 -24q-6 -18 -18 -18q14 -2 18 10q4 -14 18 -12q-14 4 -18 20z" fill="#6fd36a" stroke="${M.d}"/><circle cx="-16" cy="10" r="3" fill="${M.d}"/><circle cx="16" cy="10" r="3" fill="${M.d}"/>`,`<path d="M-4 -24q-16 -20 -30 -14q16 -6 26 4M4 -24q16 -20 30 -14q-16 -6 -26 4M0 -24v-16" stroke="#6b4a2b" stroke-width="4" fill="none"/><circle cx="-30" cy="-40" r="8" fill="#6fd36a"/><circle cx="30" cy="-40" r="8" fill="#6fd36a"/><circle cx="0" cy="-44" r="10" fill="#ff8fb0"/>`],
+    other:[`<path d="M-14 -22l-4 -12 10 6zM14 -22l4 -12 -10 6z" fill="${M.d}"/>`,`<path d="M-14 -22l-6 -16 12 8zM14 -22l6 -16 -12 8z" fill="${M.d}"/>`,`<path d="M-14 -22l-8 -20 14 10zM14 -22l8 -20 -14 10z" fill="${M.d}"/><path d="M-6 -30l6 -10 6 10z" fill="#ffd447"/>`]}[type]||[];
+  return monBody(type,st,80,cy,0,feat);
+}
+/* สายพันธุ์มอนสเตอร์: แต่ละท่าได้ตัวของตัวเอง สุ่มแบบคงที่จากชื่อท่า (รูปร่าง ตา ปาก ลาย ของประดับ สี ชื่อ) */
+const PALS={push:[['#ff7a2f','#c8401a','#ffd29a'],['#e8434a','#9c1d2c','#ffc0b0'],['#ffb02e','#c46a0b','#fff0b0']],
+ pull:[['#3f8ee8','#1e58a8','#bfe1ff'],['#2ec4c4','#137d85','#c6fbf2'],['#6d6ff0','#3b3ab0','#d6d6ff']],
+ legs:[['#4cb050','#2a7a32','#d6f5b0'],['#9cc93a','#5a7f17','#eef9c0'],['#2f9e7e','#1b6150','#c0f0df']],
+ other:[['#8d99a6','#56606b','#e3e8ee'],['#b08ad6','#6f4c97','#ecdcff'],['#c9a24a','#8a6a1e','#fff1c4']]};
+const PRE={push:['Pyro','Ember','Blaze','Cinder','Flare','Scorch','Ignis','Magma'],pull:['Aqua','Ripple','Coral','Splash','Tide','Hydro','Brine','Surf'],
+ legs:['Moss','Thorn','Root','Fern','Bloom','Bark','Sprig','Vine'],other:['Bolt','Iron','Cog','Rivet','Chrome','Volt']};
+const SUF=[['let','ling','lord'],['o','ox','oxen'],['pup','buff','titan'],['bit','brawn','king'],['kin','flex','zilla'],['mi','muscle','mega']];
+function SPEC(name,type){
+  const h=hash(name+'#'), t=PALS[type]?type:'other', p=PALS[t][h%3], pre=PRE[t][(h>>>3)%PRE[t].length], suf=SUF[(h>>>6)%SUF.length];
+  return {m:p[0],d:p[1],l:p[2],body:(h>>>9)%6,eyes:(h>>>12)%6,mouth:(type==='pull'&&(h>>>15)%3===0)?3:(h>>>15)%5,pat:(h>>>18)%5,acc:(h>>>21)%6,
+    names:suf.map(s=>pre+s)};
+}
+function monBody(type,st,x,y,rot,feat,v){
+  v=v||SPEC('x',type);
+  const s=.8+st*.1, m=v.m,d=v.d,l=v.l;
+  const shape=[`<ellipse rx="28" ry="28" SH/>`,`<ellipse cy="-2" rx="23" ry="31" SH/>`,`<rect x="-27" y="-26" width="54" height="52" rx="16" SH/>`,
+    `<path d="M0 -28C16 -28 20 -14 22 0C26 16 34 28 0 28C-34 28 -26 16 -22 0C-20 -14 -16 -28 0 -28Z" SH/>`,`<ellipse cy="3" rx="33" ry="24" SH/>`,
+    `<path d="M-26 24V-2A26 26 0 0 1 26 -2V24l-8.7 -6-8.6 6-8.7 -6-8.7 6-8.6 -6Z" SH/>`][v.body];
+  const top=[-28,-33,-26,-28,-21,-28][v.body];
+  const pat=[``,`<circle cx="-16" cy="-14" r="4" fill="${d}" opacity=".45"/><circle cx="18" cy="-10" r="3" fill="${d}" opacity=".45"/><circle cx="-20" cy="10" r="3" fill="${d}" opacity=".45"/>`,
+    `<path d="M-8 ${top+2}q8 6 16 0M-12 ${top+8}q12 6 24 0" stroke="${d}" stroke-width="3" fill="none" opacity=".6"/>`,`<ellipse cy="12" rx="20" ry="14" fill="${l}"/>`,
+    `<rect x="-26" y="-11" width="52" height="15" rx="7" fill="${d}" opacity=".55"/>`][v.pat];
+  const belly=v.pat===3?'':`<ellipse cy="12" rx="15" ry="11" fill="${l}"/>`;
+  const pupil=(cx,r)=>`<circle cx="${cx+1}" cy="-2" r="${r}" fill="#1b1b1b"/><circle cx="${cx+2}" cy="-3.6" r="${r*.35}" fill="#fff"/>`;
+  const eyes=[`<ellipse cx="-10" cy="-3" rx="5" ry="6.5" fill="#fff"/><ellipse cx="10" cy="-3" rx="5" ry="6.5" fill="#fff"/>${pupil(-10,3.4)}${pupil(10,3.4)}`,
+    `<path d="M-15 -3a5 5 0 0 0 10 0zM5 -3a5 5 0 0 0 10 0z" fill="#fff"/>${pupil(-10,2.6).replace('cy="-2"','cy="-1"')}${pupil(10,2.6).replace('cy="-2"','cy="-1"')}<path d="M-16 -3h12M4 -3h12" stroke="#1b1b1b" stroke-width="2" stroke-linecap="round"/>`,
+    `<circle cy="-4" r="11" fill="#fff" stroke="${d}" stroke-width="1.5"/><circle cx="1" cy="-3" r="6" fill="#1b1b1b"/><circle cx="3" cy="-6" r="2.2" fill="#fff"/>`,
+    `<path d="M-15 -6l10 3v5h-10zM15 -6l-10 3v5h10z" fill="#fff"/>${pupil(-10,2.6)}${pupil(10,2.6)}<path d="M-17 -9l12 4M17 -9l-12 4" stroke="#1b1b1b" stroke-width="3" stroke-linecap="round"/>`,
+    `<circle cx="-9" cy="-3" r="2.8" fill="#1b1b1b"/><circle cx="9" cy="-3" r="2.8" fill="#1b1b1b"/><circle cx="-8" cy="-4" r="1" fill="#fff"/><circle cx="10" cy="-4" r="1" fill="#fff"/>`,
+    `<ellipse cx="-10" cy="-4" rx="6.5" ry="8" fill="#1b1b1b"/><ellipse cx="10" cy="-4" rx="6.5" ry="8" fill="#1b1b1b"/><circle cx="-8" cy="-7" r="2.6" fill="#fff"/><circle cx="12" cy="-7" r="2.6" fill="#fff"/><circle cx="-12" cy="-1" r="1.2" fill="#fff"/><circle cx="8" cy="-1" r="1.2" fill="#fff"/>`][v.eyes];
+  const mouth=[`<path d="M-6 7q6 5 12 0" stroke="#1b1b1b" stroke-width="2" fill="none" stroke-linecap="round"/>`,
+    `<path d="M-7 6q7 6 14 0" stroke="#1b1b1b" stroke-width="2" fill="#fff" stroke-linecap="round"/><path d="M-4 7l1.5 3.5 1.5 -3M2 7l1.5 3.5 1.5 -3" fill="#fff" stroke="#1b1b1b" stroke-width=".8"/>`,
+    `<path d="M-6 5h12q0 9 -6 9t-6 -9z" fill="#7a1c1c" stroke="#1b1b1b" stroke-width="1.5"/><path d="M-3 11q3 -3 6 0" fill="#ff7f8f"/>`,
+    `<path d="M-6 4l6 7 6 -7z" fill="#ffb02e" stroke="#c46a0b" stroke-width="1"/>`,
+    `<path d="M-7 6q3.5 4 7 0q3.5 4 7 0" stroke="#1b1b1b" stroke-width="2" fill="none" stroke-linecap="round"/>`][v.mouth];
+  const acc=[``,`<path d="M-24 ${top+12}q24 -10 48 0v6q-24 -10 -48 0z" fill="#e23b3b"/><path d="M22 ${top+14}l12 4-3 6M22 ${top+16}l10 10" stroke="#e23b3b" stroke-width="3" fill="none" stroke-linecap="round"/>`,
+    `<path d="M0 ${top}q-4 -10 2 -16" stroke="${d}" stroke-width="2.5" fill="none"/><circle cx="2" cy="${top-17}" r="4" fill="#ffe14d" stroke="${d}"/>`,
+    `<path d="M-20 ${top+8}l-4 -14 12 8zM20 ${top+8}l4 -14 -12 8z" fill="${m}" stroke="${d}" stroke-width="1.5"/><path d="M-19 ${top+4}l-2 -6 5 4zM19 ${top+4}l2 -6 -5 4z" fill="#ffb3c6"/>`,
+    `<path d="M-8 ${top+2}l-2 -10 6 4 4 -10 4 10 6 -4 -2 10z" fill="${d}"/>`,
+    `<path d="M-22 ${top+10}q22 -22 44 0z" fill="#2b2f36"/><path d="M14 ${top+6}h20" stroke="#2b2f36" stroke-width="5" stroke-linecap="round"/><circle cy="${top-2}" r="2.5" fill="${m}"/>`][v.acc];
+  const brow=st>=1&&v.eyes!==3&&v.eyes!==2?`<path d="M-15 -11l9 3M15 -11l-9 3" stroke="#222" stroke-width="2.5" stroke-linecap="round"/>`:'';
+  return `<g transform="translate(${x} ${y}) rotate(${rot}) scale(${s})">
+   ${st===2?`<circle r="46" fill="${l}" opacity=".35"/><circle r="36" fill="#fff" opacity=".2"/>`:''}
+   ${feat[st]||''}
+   ${shape.replace('SH',`fill="${m}" stroke="${d}" stroke-width="1.5"`)}
+   <g opacity=".3">${shape.replace('SH',`fill="none" stroke="${d}" stroke-width="7" transform="translate(2 3) scale(.92)"`)}</g>
+   ${belly}${pat}
+   <ellipse cx="-10" cy="${top+10}" rx="8" ry="5" fill="#fff" opacity=".35"/>
+   ${eyes}${brow}
+   <ellipse cx="-19" cy="6" rx="4" ry="2.5" fill="#ff7f9a" opacity=".6"/><ellipse cx="19" cy="6" rx="4" ry="2.5" fill="#ff7f9a" opacity=".6"/>
+   ${mouth}${acc}
+   ${st>=1?`<path d="M-36 -16l-5 -3M36 -16l5 -3M-38 -6h-6M38 -6h6" stroke="#fff" stroke-width="2" stroke-linecap="round"/>`:''}
+  </g>`;
+}
+/* ===== v2: ฉากแนวภาพวาดเฉพาะตัว + มอนสเตอร์ทรงสัตว์ (ประกาศซ้ำ = ทับของเดิม) ===== */
+const ARCH={push:['lizard','fox','ox'],pull:['turtle','bird','frog'],legs:['frog','ox','fox'],other:['fox','ox','bird']};
+const SCENES={push:['volcano','canyon','forge','autumn'],pull:['ocean','waterfall','reef','rainlake'],legs:['meadow','bamboo','mushroom','peaks'],other:['city','storm','peaks','canyon']};
+const SKW={push:['Flame','Blaze','Magma','Ember','Inferno'],pull:['Tidal','Aqua','Whirl','Torrent','Hydro'],legs:['Leaf','Root','Vine','Thorn','Bloom'],other:['Iron','Volt','Steel','Thunder','Metal']};
+function SPEC(name,type){
+  const h=hash(name+'#'), t=PALS[type]?type:'other', p=PALS[t][h%3], pre=PRE[t][(h>>>3)%PRE[t].length], suf=SUF[(h>>>6)%SUF.length];
+  const words=name.split(' ');
+  return {m:p[0],d:p[1],l:p[2],arch:ARCH[t][(h>>>9)%3],scene:SCENES[t][(h>>>12)%4],mouth:(h>>>15)%3,acc:(h>>>18)%4,seed:h%997,
+    names:suf.map(s=>pre+s),skill:SKW[t][(h>>>21)%5]+' '+words[words.length-1]};
+}
+function rng(seed){let s=seed>>>0||1;return()=>(s=(s*1664525+1013904223)>>>0)/4294967296}
+function blobs(r,n,col,x0,x1,y0,y1,rmin,rmax,op){let o='';for(let i=0;i<n;i++)o+=`<ellipse cx="${(x0+r()*(x1-x0)).toFixed(1)}" cy="${(y0+r()*(y1-y0)).toFixed(1)}" rx="${(rmin+r()*(rmax-rmin)).toFixed(1)}" ry="${((rmin+r()*(rmax-rmin))*.6).toFixed(1)}" fill="${Array.isArray(col)?col[i%col.length]:col}" opacity="${op}"/>`;return o}
+const LG=(id,a,b,c)=>`<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/>${c?`<stop offset=".55" stop-color="${b}"/><stop offset="1" stop-color="${c}"/>`:`<stop offset="1" stop-color="${b}"/>`}</linearGradient>`;
+function sceneFor(name,type,id,H,dy){
+  const v=SPEC(name,type), r=rng(v.seed+7), g=102+dy, W=160;
+  let d='', s='';
+  switch(v.scene){
+  case 'volcano': d=LG('k'+id,'#2b1a3a','#a3314a','#ff9a4a');
+    s=`<rect width="${W}" height="${H}" fill="url(#k${id})"/>${blobs(r,14,['#5b2a4a','#3a2040'],0,W,10,g-50,10,26,.5)}
+    <path d="M20 ${g}L66 ${g-62}h22L140 ${g}Z" fill="#3a1c25"/><path d="M66 ${g-62}h22l-6 10q-5 -4 -10 0z" fill="#ff7a2a"/>
+    <path d="M76 ${g-56}q-6 20 4 34q-8 14 2 ${22}" stroke="#ff8c2a" stroke-width="3" fill="none" opacity=".8"/>
+    ${blobs(r,10,'#6c5a6e',50,110,g-110,g-60,8,18,.55)}${blobs(r,25,'#ffb347',0,W,10,g-20,.8,1.6,.9)}<rect y="${g-6}" width="${W}" height="${H-g+6}" fill="#24121a"/>`;break;
+  case 'canyon': d=LG('k'+id,'#ffcf8a','#ff8a5c','#8a3d5c');
+    s=`<rect width="${W}" height="${H}" fill="url(#k${id})"/><circle cx="110" cy="${g-60}" r="20" fill="#fff1c0" opacity=".9"/>
+    <path d="M0 ${g-40}h30v-14h26v14h10V${g}H0Z" fill="#b5523f" opacity=".7"/><path d="M96 ${g}V${g-50}h22v-10h30v60z" fill="#a0453e" opacity=".85"/>
+    <path d="M0 ${g-18}q40 -10 80 0t80 -4V${H}H0Z" fill="#d97a4a"/>${blobs(r,16,['#e8935a','#c4603f'],0,W,g-10,g+6,6,14,.6)}<rect y="${g}" width="${W}" height="${H-g}" fill="#c4603f"/>`;break;
+  case 'forge': d=LG('k'+id,'#2a1610','#5a2a14','#2a1610');
+    s=`<rect width="${W}" height="${H}" fill="url(#k${id})"/>${Array.from({length:Math.ceil(g/10)},(_,j)=>Array.from({length:9},(_,i)=>`<rect x="${i*20-(j%2)*10}" y="${j*10}" width="18" height="8" rx="1" fill="#4a2416" opacity="${.5+r()*.4}"/>`).join('')).join('')}
+    <ellipse cx="130" cy="${g-28}" rx="40" ry="34" fill="#ff7a1a" opacity=".45"/><ellipse cx="130" cy="${g-24}" rx="18" ry="16" fill="#ffd36a" opacity=".8"/>
+    <path d="M18 ${g}v-14h-8v-8h36v8h-8v14z" fill="#1a0e0a"/>${blobs(r,20,'#ffc04a',90,W,g-60,g,.8,1.5,.9)}<rect y="${g}" width="${W}" height="${H-g}" fill="#1e0f0a"/>`;break;
+  case 'autumn': d=LG('k'+id,'#ffe2b0','#f0a86a');
+    s=`<rect width="${W}" height="${H}" fill="url(#k${id})"/>${blobs(r,26,['#d9622b','#e8913a','#b8432a','#f2b84a'],-10,W+10,g-80,g-30,10,24,.75)}
+    ${[12,48,118,150].map(x=>`<rect x="${x}" y="${g-50}" width="5" height="50" fill="#5a3320"/>`).join('')}${blobs(r,30,['#e8913a','#c94a2a'],0,W,10,g,1.5,3,.9)}
+    <rect y="${g-4}" width="${W}" height="${H-g+4}" fill="#b8682e"/>${blobs(r,14,['#d9622b','#f2b84a'],0,W,g,g+8,4,8,.7)}`;break;
+  case 'ocean': d=LG('k'+id,'#7fc8f8','#cdeeff','#2f7cc8');
+    s=`<rect width="${W}" height="${H}" fill="url(#k${id})"/>${blobs(r,8,'#fff',0,W,8,g-60,10,22,.6)}<path d="M108 ${g-40}q14 -14 30 0z" fill="#3d7a5a"/>
+    <path d="M0 ${g-38}q20 -6 40 0t40 0 40 0 40 0V${H}H0Z" fill="#3f8fd8"/><path d="M0 ${g-22}q20 -8 40 0t40 0 40 0 40 0V${H}H0Z" fill="#2a6fc0"/>
+    ${blobs(r,18,'#e8f7ff',0,W,g-40,g-6,3,8,.7)}<rect y="${g-4}" width="${W}" height="${H-g+4}" fill="#e9d29a"/>`;break;
+  case 'waterfall': d=LG('k'+id,'#bfe8ff','#7cc0e8');
+    s=`<rect width="${W}" height="${H}" fill="url(#k${id})"/><path d="M0 0h48l6 ${g}H0Z" fill="#4a6a5a"/><path d="M160 0h-46l-6 ${g}H160Z" fill="#3d5c4e"/>
+    <rect x="54" y="0" width="54" height="${g-10}" fill="#e6f6ff"/>${Array.from({length:10},(_,i)=>`<path d="M${58+i*5} 0v${g-12}" stroke="#a8d8f5" stroke-width="1.5" opacity=".7"/>`).join('')}
+    ${blobs(r,22,'#fff',40,120,g-24,g+4,6,14,.75)}${blobs(r,10,['#2f7a4a','#3d9a5a'],0,W,10,g-40,6,12,.8)}<rect y="${g}" width="${W}" height="${H-g}" fill="#3a8ac8"/>`;break;
+  case 'reef': d=LG('k'+id,'#5fd0e8','#1a6aa8','#0b2f5e');
+    s=`<rect width="${W}" height="${H}" fill="url(#k${id})"/>${Array.from({length:6},(_,i)=>`<path d="M${10+i*28} 0l${-14+r()*8} ${g}h10z" fill="#fff" opacity=".1"/>`).join('')}
+    ${Array.from({length:5},()=>{const x=r()*W;return `<path d="M${x} ${g}q-6 -20 2 -40t-2 -30" stroke="#2fa86a" stroke-width="4" fill="none" opacity=".8"/>`}).join('')}
+    ${blobs(r,12,['#ff7a9a','#ffb04a','#c47aff'],0,W,g-14,g,5,11,.9)}${Array.from({length:14},()=>`<circle cx="${r()*W}" cy="${r()*g}" r="${1+r()*3}" fill="none" stroke="#dff" opacity=".7"/>`).join('')}<rect y="${g}" width="${W}" height="${H-g}" fill="#d8c08a"/>`;break;
+  case 'rainlake': d=LG('k'+id,'#8a9ab0','#c9d4e0');
+    s=`<rect width="${W}" height="${H}" fill="url(#k${id})"/><path d="M0 ${g-30}l30 -26 26 18 34 -32 40 30 30 -14V${g}H0Z" fill="#6a7c92" opacity=".7"/>
+    <rect y="${g-14}" width="${W}" height="${H-g+14}" fill="#5c7690"/>${Array.from({length:8},()=>`<ellipse cx="${r()*W}" cy="${g-10+r()*8}" rx="${6+r()*8}" ry="1.5" fill="none" stroke="#dbe6f0" opacity=".7"/>`).join('')}
+    ${Array.from({length:40},()=>{const x=r()*W,y=r()*g;return `<path d="M${x} ${y}l-3 9" stroke="#eef4fa" stroke-width=".8" opacity=".6"/>`}).join('')}<rect y="${g}" width="${W}" height="${H-g}" fill="#4a5f75"/>`;break;
+  case 'meadow': d=LG('k'+id,'#8fd0ff','#e6f7ff');
+    s=`<rect width="${W}" height="${H}" fill="url(#k${id})"/>${blobs(r,12,'#fff',0,W,8,g-55,8,18,.85)}<ellipse cx="40" cy="${g-6}" rx="80" ry="34" fill="#8ccf6a"/><ellipse cx="130" cy="${g-4}" rx="70" ry="28" fill="#74bd56"/>
+    ${blobs(r,30,['#ffef6a','#ff9ad0','#fff'],0,W,g-20,g+6,1.2,2.4,.95)}<rect y="${g}" width="${W}" height="${H-g}" fill="#5fa846"/>`;break;
+  case 'bamboo': d=LG('k'+id,'#d8f2c0','#7cbf6a');
+    s=`<rect width="${W}" height="${H}" fill="url(#k${id})"/>${Array.from({length:12},(_,i)=>{const x=r()*W,w=3+r()*5,c=['#4a9a4a','#2f7a3a','#6ab85a'][i%3];return `<rect x="${x}" y="0" width="${w}" height="${g}" fill="${c}" opacity="${.5+r()*.5}"/>`+Array.from({length:5},(_,j)=>`<rect x="${x-.5}" y="${j*g/5}" width="${w+1}" height="1.5" fill="#1f5a2a" opacity=".6"/>`).join('')}).join('')}
+    ${Array.from({length:4},(_,i)=>`<path d="M${20+i*40} 0l-20 ${g}h14z" fill="#fff" opacity=".15"/>`).join('')}<rect y="${g}" width="${W}" height="${H-g}" fill="#5a8a3a"/>`;break;
+  case 'mushroom': d=LG('k'+id,'#3a2a5c','#6a4a8a','#2a5a4a');
+    s=`<rect width="${W}" height="${H}" fill="url(#k${id})"/>${[[22,40,'#ff6a8a'],[140,52,'#ffb04a'],[118,30,'#8ae0ff']].map(([x,h,c])=>`<rect x="${x-3}" y="${g-h}" width="6" height="${h}" fill="#f0e6d0"/><ellipse cx="${x}" cy="${g-h}" rx="${h*.5}" ry="${h*.28}" fill="${c}"/><ellipse cx="${x}" cy="${g-h}" rx="${h*.7}" ry="${h*.45}" fill="${c}" opacity=".2"/>`).join('')}
+    ${blobs(r,30,['#c8ff8a','#ffe08a'],0,W,10,g,.8,1.5,.9)}<rect y="${g}" width="${W}" height="${H-g}" fill="#2a4a3a"/>`;break;
+  case 'peaks': d=LG('k'+id,'#ffd0a0','#b0d8ff');
+    s=`<rect width="${W}" height="${H}" fill="url(#k${id})"/><path d="M0 ${g-30}L40 ${g-80}L70 ${g-50}L100 ${g-90}L160 ${g-36}V${g}H0Z" fill="#7a8ab0"/><path d="M40 ${g-80}l-10 14 8 -2 6 6 6 -8zM100 ${g-90}l-12 16 9 -3 6 6 8 -9z" fill="#fff"/>
+    ${Array.from({length:9},()=>{const x=r()*W,h=14+r()*16;return `<path d="M${x} ${g-h}l-6 ${h}h12z" fill="#2f5a4a"/>`}).join('')}<rect y="${g}" width="${W}" height="${H-g}" fill="#6a9a5a"/>`;break;
+  case 'city': d=LG('k'+id,'#0f1240','#3a2a7a','#ff6aa0');
+    s=`<rect width="${W}" height="${H}" fill="url(#k${id})"/><circle cx="128" cy="24" r="12" fill="#fff6d0"/>${Array.from({length:40},()=>`<circle cx="${r()*W}" cy="${r()*(g-60)}" r=".7" fill="#fff"/>`).join('')}
+    ${Array.from({length:9},(_,i)=>{const x=i*18-4,h=30+r()*50;return `<rect x="${x}" y="${g-h}" width="16" height="${h}" fill="#1a1440"/>`+Array.from({length:Math.floor(h/8)},(_,j)=>r()>.5?`<rect x="${x+3+(j%2)*6}" y="${g-h+4+j*8}" width="3" height="3" fill="#ffd36a"/>`:'').join('')}).join('')}<rect y="${g}" width="${W}" height="${H-g}" fill="#22184a"/>`;break;
+  case 'storm': d=LG('k'+id,'#2a2f45','#5a6a8a','#c9d06a');
+    s=`<rect width="${W}" height="${H}" fill="url(#k${id})"/>${blobs(r,16,['#1c2033','#3a4260'],0,W,0,g-60,14,30,.8)}<path d="M110 ${g-90}l-12 26h10l-14 30" stroke="#fff7a0" stroke-width="3" fill="none"/>
+    <path d="M0 ${g-10}q80 -16 160 0V${H}H0Z" fill="#8a9a4a"/>${Array.from({length:30},()=>{const x=r()*W;return `<path d="M${x} ${g}l2 -6" stroke="#5a6a2a" stroke-width="1.5"/>`}).join('')}<rect y="${g}" width="${W}" height="${H-g}" fill="#6a7a3a"/>`;break;
+  }
+  return {defs:d+`<filter id="pf${id}" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="2" seed="${v.seed%50}"/><feDisplacementMap in="SourceGraphic" scale="6"/><feGaussianBlur stdDeviation=".4"/></filter><filter id="gr${id}"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="3"/><feColorMatrix values="0 0 0 0 .45 0 0 0 0 .4 0 0 0 0 .35 0 0 0 .5 0"/></filter>`,
+    body:`<g filter="url(#pf${id})">${s}</g>`, grain:`<rect width="${W}" height="${H}" filter="url(#gr${id})" opacity=".35"/>`};
+}
+function monBody(type,st,x,y,rot,feat,v){
+  v=v||SPEC('x',type);
+  const s=.85+st*.12, m=v.m,d=v.d,l=v.l, A=v.arch, SW=`stroke="${d}" stroke-width="1.6" stroke-linejoin="round"`;
+  const tip={push:`<path d="M0 0q-8 -6 -4 -16q4 6 6 2q2 -8 8 -10q-2 10 2 14q2 8 -6 10z" fill="#ffb02e" stroke="#e8541a"/>`,legs:`<path d="M0 0q-4 -14 8 -18q4 12 -8 18z" fill="#6fd36a" stroke="#2a7a32"/>`,
+    pull:`<path d="M0 0l-8 -10 10 2 4 -8 2 12z" fill="${l}" stroke="${d}"/>`,other:`<path d="M0 0l-6 -8h6l-4 -8 10 10h-6l4 6z" fill="#ffd447" stroke="#b88a10"/>`}[type]||'';
+  let back='',front='',headY=-20,head=`<circle cy="${headY}" r="16" fill="${m}" ${SW}/>`;
+  if(A==='lizard'){back=`<path d="M-12 14q-26 4 -26 -16" stroke="${m}" stroke-width="8" fill="none" stroke-linecap="round"/><g transform="translate(-38 -4)">${tip}</g>`+(st===2?`<path d="M-10 -2q-30 -30 -40 -6q10 -4 14 4q6 -6 12 2z" fill="${d}" ${SW}/><path d="M10 -2q30 -30 40 -6q-10 -4 -14 4q-6 -6 -12 2z" fill="${d}" ${SW}/>`:'');
+    head=`<ellipse cy="${headY}" rx="17" ry="15" fill="${m}" ${SW}/><ellipse cy="${headY+6}" rx="10" ry="6" fill="${l}"/>`+(st>=1?`<path d="M-8 ${headY-13}l-3 -8 6 5zM8 ${headY-13}l3 -8 -6 5z" fill="${d}"/>`:'');}
+  if(A==='turtle'){back=`<ellipse cy="4" rx="25" ry="24" fill="${d}" ${SW}/><ellipse cy="4" rx="21" ry="20" fill="#a77a3a"/><path d="M0 -12l8 6v10l-8 6-8 -6v-10zM0 -12v-6M8 -6l10 -4M8 4l10 4M0 10v8M-8 4l-10 4M-8 -6l-10 -4" stroke="#6b4a1f" stroke-width="1.5" fill="none"/>`+(st>=1?`<path d="M-20 -14l-6 -8 10 2zM20 -14l6 -8 -10 2z" fill="#e9e2d0" ${SW}/>`:'');
+    head=`<circle cy="${headY}" r="15" fill="${m}" ${SW}/><path d="M-15 ${headY-2}q-8 -6 -6 -14q6 4 8 10zM15 ${headY-2}q8 -6 6 -14q-6 4 -8 10z" fill="${l}" ${SW}/>`;}
+  if(A==='bird'){back=`<path d="M-14 0q-26 -6 -28 18q10 -6 14 0q4 -8 14 -6z" fill="${d}" ${SW}/><path d="M14 0q26 -6 28 18q-10 -6 -14 0q-4 -8 -14 -6z" fill="${d}" ${SW}/>`+(st===2?`<path d="M-16 -4q-36 -20 -42 10M16 -4q36 -20 42 10" stroke="${l}" stroke-width="5" fill="none" stroke-linecap="round"/>`:'');
+    head=`<circle cy="${headY}" r="15" fill="${m}" ${SW}/><path d="M-4 ${headY-14}q-6 -12 2 -18q0 8 4 10q2 -10 10 -12q-4 10 -2 18z" fill="${d}"/>`+(st>=1?`<path d="M4 ${headY-14}q8 -14 18 -12q-8 4 -10 14z" fill="#e23b3b"/>`:'');}
+  if(A==='frog'){back=type==='legs'?`<path d="M0 -8q-22 -8 -18 -26q10 4 14 12q4 -16 18 -16q-2 14 -10 22q16 -4 22 6q-14 6 -26 2z" fill="#6fd36a" ${SW}/>`+(st===2?`<circle cy="-34" r="10" fill="#ff8fb0" stroke="#c4426a"/><circle cy="-34" r="4" fill="#ffd447"/>`:'')
+      :`<path d="M-18 -26q-12 -4 -14 -12M-18 -22q-14 2 -18 -4M-18 -18q-12 6 -16 4M18 -26q12 -4 14 -12M18 -22q14 2 18 -4M18 -18q12 6 16 4" stroke="#ff8fb0" stroke-width="4" stroke-linecap="round" fill="none"/>`;
+    headY=-16;head=`<ellipse cy="${headY}" rx="22" ry="15" fill="${m}" ${SW}/><circle cx="-11" cy="${headY-11}" r="7" fill="${m}" ${SW}/><circle cx="11" cy="${headY-11}" r="7" fill="${m}" ${SW}/>`;}
+  if(A==='fox'){const tails=st===2?3:1;back=Array.from({length:tails},(_,i)=>`<path d="M-10 14q-30 ${-4-i*10} -24 ${-30-i*6}q8 6 10 14q4 -10 12 -12q-4 14 2 28z" fill="${m}" ${SW} transform="rotate(${i*-18} -10 14)"/><path d="M-30 ${-24-i*8}q4 4 6 8" stroke="${l}" stroke-width="5" stroke-linecap="round" transform="rotate(${i*-18} -10 14)"/>`).join('');
+    head=`<path d="M-14 ${headY-6}l-6 -22 16 12zM14 ${headY-6}l6 -22 -16 12z" fill="${m}" ${SW}/><path d="M-13 ${headY-10}l-3 -11 8 7zM13 ${headY-10}l3 -11 -8 7z" fill="#ffc6d6"/><circle cy="${headY}" r="16" fill="${m}" ${SW}/><path d="M-16 ${headY+2}l-8 4 8 2zM16 ${headY+2}l8 4 -8 2z" fill="${l}" ${SW}/>`;}
+  if(A==='ox'){const hl=8+st*5;head=`<path d="M-14 ${headY-8}q-${hl} -2 -${hl+4} -${hl+4}q8 ${hl/2} ${hl} ${hl/2+4}zM14 ${headY-8}q${hl} -2 ${hl+4} -${hl+4}q-8 ${hl/2} -${hl} ${hl/2+4}z" fill="#f2e6c8" ${SW}/><ellipse cx="-17" cy="${headY-2}" rx="6" ry="3.5" fill="${m}" ${SW}/><ellipse cx="17" cy="${headY-2}" rx="6" ry="3.5" fill="${m}" ${SW}/><circle cy="${headY}" r="16" fill="${m}" ${SW}/><ellipse cy="${headY+8}" rx="11" ry="7" fill="${l}" ${SW}/><circle cx="-4" cy="${headY+8}" r="1.5" fill="${d}"/><circle cx="4" cy="${headY+8}" r="1.5" fill="${d}"/>`+(st===2?`<path d="M-4 ${headY+13}a4 4 0 0 0 8 0" stroke="#ffd447" stroke-width="2" fill="none"/>`:'');}
+  const ey=A==='frog'?headY-11:headY-2, ex=A==='frog'?11:6.5;
+  const eye=cx=>`<ellipse cx="${cx}" cy="${ey}" rx="${A==='frog'?4:4}" ry="${A==='frog'?4.5:5.5}" fill="#1b1b1b"/><ellipse cx="${cx}" cy="${ey+2}" rx="2.6" ry="2.4" fill="${d}"/><circle cx="${cx+1.3}" cy="${ey-2}" r="1.6" fill="#fff"/><circle cx="${cx-1.2}" cy="${ey+2.4}" r=".7" fill="#fff"/>`;
+  const brow=st>=1?`<path d="M${-ex-5} ${ey-8}l8 3M${ex+5} ${ey-8}l-8 3" stroke="#1b1b1b" stroke-width="2.2" stroke-linecap="round"/>`:'';
+  const my=A==='frog'?headY+2:A==='ox'?headY+4:headY+7;
+  const mouth=A==='bird'?`<path d="M-4 ${headY+3}l4 6 4 -6z" fill="#ffb02e" stroke="#c46a0b"/>`:A==='ox'?'':
+    [`<path d="M-4 ${my}q4 3 8 0" stroke="#1b1b1b" stroke-width="1.6" fill="none" stroke-linecap="round"/>`,
+     `<path d="M-5 ${my}q5 5 10 0z" fill="#7a1c1c" stroke="#1b1b1b" stroke-width="1.2"/><path d="M-3 ${my}l1 2.5 1 -2.5" fill="#fff"/>`,
+     `<path d="M-4 ${my}q2 2 4 0q2 2 4 0" stroke="#1b1b1b" stroke-width="1.6" fill="none" stroke-linecap="round"/>`][v.mouth];
+  const acc=[``,`<path d="M-15 ${headY-6}q15 -8 30 0v4q-15 -8 -30 0z" fill="#e23b3b"/><path d="M14 ${headY-4}l10 2-2 6" stroke="#e23b3b" stroke-width="2.5" fill="none" stroke-linecap="round"/>`,``,
+    `<path d="M-18 6q18 10 36 0" stroke="#ffd447" stroke-width="3" fill="none"/>`][v.acc];
+  return `<g transform="translate(${x} ${y}) rotate(${rot}) scale(${s})">
+   ${st===2?`<circle cy="-6" r="48" fill="${l}" opacity=".3"/>`:''}
+   ${back}
+   <ellipse cy="8" rx="19" ry="19" fill="${m}" ${SW}/><ellipse cy="11" rx="12" ry="12" fill="${l}"/>
+   <path d="M-17 14a19 19 0 0 0 34 0a20 20 0 0 1 -34 0z" fill="${d}" opacity=".3"/>
+   ${head}${front}
+   <ellipse cx="-7" cy="${headY-8}" rx="6" ry="3.5" fill="#fff" opacity=".35"/>
+   ${eye(-ex)}${eye(ex)}${brow}
+   <ellipse cx="${-ex-6}" cy="${ey+7}" rx="3.5" ry="2" fill="#ff7f9a" opacity=".55"/><ellipse cx="${ex+6}" cy="${ey+7}" rx="3.5" ry="2" fill="#ff7f9a" opacity=".55"/>
+   ${mouth}${acc}
+  </g>`;
+}
+/* ท่าของมอนสเตอร์ตามท่าออกกำลังกาย · พิกัดในกรอบ 160x120 พื้น y=102 */
+const BAR=(x1,x2,y,big)=>`<path d="M${x1} ${y}H${x2}" stroke="#2b2f36" stroke-width="3.5" stroke-linecap="round"/>${[x1,x2].map(x=>big?`<circle cx="${x}" cy="${y}" r="12" fill="#30353d" stroke="#5a616c" stroke-width="3"/><circle cx="${x}" cy="${y}" r="3" fill="#9aa3ad"/>`:`<rect x="${x-4}" y="${y-11}" width="8" height="22" rx="2" fill="#30353d"/><rect x="${x+(x<80?4:-8)}" y="${y-7}" width="4" height="14" rx="1" fill="#5a616c"/>`).join('')}`;
+const DB=(x,y)=>`<path d="M${x-7} ${y}h14" stroke="#2b2f36" stroke-width="3"/><rect x="${x-10}" y="${y-5}" width="5" height="10" rx="1.5" fill="#30353d"/><rect x="${x+5}" y="${y-5}" width="5" height="10" rx="1.5" fill="#30353d"/>`;
+const PAD='#7a3b2e', MET='#8b95a1';
+const MPOSE={
+ bench:{b:[80,62,-72],prop:`<rect x="34" y="82" width="92" height="8" rx="3" fill="${PAD}"/><path d="M44 90v12M116 90v12M30 102h100" stroke="${MET}" stroke-width="4"/><path d="M40 82V30M120 82V30" stroke="${MET}" stroke-width="3"/>`,arms:[[72,56,58,30,-8],[88,56,102,30,8]],legs:[[96,74,120,102,-14],[92,80,112,102,-14]],eq:BAR(32,128,30)},
+ ohp:{b:[80,68,0],arms:[[66,60,52,24,-10],[94,60,108,24,10]],legs:[[72,86,64,102,6],[88,86,96,102,-6]],eq:BAR(28,132,22)},
+ incline:{b:[72,64,-30],prop:`<path d="M44 92L68 44" stroke="${PAD}" stroke-width="9" stroke-linecap="round"/><path d="M60 92h30" stroke="${PAD}" stroke-width="8" stroke-linecap="round"/><path d="M52 94v8M84 94v8" stroke="${MET}" stroke-width="4"/>`,arms:[[72,52,86,24,-8],[82,58,108,32,8]],legs:[[88,82,110,102,-10],[82,86,100,102,-10]],eq:DB(86,22)+DB(110,30)},
+ pushdown:{b:[72,66,8],prop:`<path d="M136 6v96M124 102h24" stroke="${MET}" stroke-width="5"/><circle cx="132" cy="14" r="5" fill="#30353d"/><path d="M132 14L104 82" stroke="#2b2f36" stroke-width="1.5"/>`,arms:[[80,60,104,84,-14],[84,68,104,86,-10]],legs:[[68,86,60,102,4],[78,88,84,102,-4]],eq:`<path d="M100 82l8 6M104 80l6 8" stroke="#c9a24a" stroke-width="3" stroke-linecap="round"/>`},
+ deadlift:{b:[84,58,22],arms:[[84,70,78,90,6],[92,70,90,90,-6]],legs:[[72,76,62,102,-16],[80,80,74,102,-16]],eq:BAR(34,126,90,1)},
+ pulldown:{b:[80,72,0],prop:`<path d="M80 0v18" stroke="#2b2f36" stroke-width="1.5"/><rect x="58" y="92" width="44" height="7" rx="3" fill="${PAD}"/><path d="M80 99v3M50 102h60" stroke="${MET}" stroke-width="4"/>`,arms:[[66,64,48,20,-8],[94,64,112,20,8]],legs:[[72,88,104,102,-14],[86,88,116,102,-14]],eq:`<path d="M36 20q44 -8 88 0" stroke="#2b2f36" stroke-width="3.5" fill="none" stroke-linecap="round"/>`},
+ row:{b:[62,66,-10],prop:`<rect x="40" y="88" width="40" height="7" rx="3" fill="${PAD}"/><path d="M60 95v7M30 102h120M140 76v26" stroke="${MET}" stroke-width="4"/><path d="M116 72H158" stroke="#2b2f36" stroke-width="1.5"/>`,arms:[[70,62,114,70,-10],[72,70,114,74,-6]],legs:[[70,84,136,90,-14],[66,88,136,98,-14]],eq:`<path d="M114 64v16" stroke="#2b2f36" stroke-width="4" stroke-linecap="round"/>`},
+ curl:{b:[80,68,0],arms:[[68,70,56,92,6],[92,64,104,44,24]],legs:[[72,86,64,102,6],[88,86,96,102,-6]],eq:DB(56,94)+DB(104,42)},
+ squat:{b:[80,72,0],arms:[[66,62,48,48,-6],[94,62,112,48,6]],legs:[[70,88,54,102,-18],[90,88,106,102,18]],eq:BAR(22,138,48)},
+ rdl:{b:[86,60,38],arms:[[88,70,92,92,4],[94,70,100,92,-4]],legs:[[72,76,70,102,0],[78,80,80,102,0]],eq:BAR(38,134,92,1)},
+ legpress:{b:[54,72,-32],prop:`<path d="M28 98L44 56" stroke="${PAD}" stroke-width="10" stroke-linecap="round"/><path d="M36 98h40" stroke="${PAD}" stroke-width="8" stroke-linecap="round"/><path d="M118 40l18 40M132 70l14 32" stroke="${MET}" stroke-width="4"/><rect x="112" y="44" width="8" height="34" rx="2" fill="#30353d" transform="rotate(-24 116 61)"/>`,arms:[[54,78,44,94,0],[60,80,52,96,0]],legs:[[66,70,114,52,-16],[66,78,116,66,-16]],eq:''},
+ calf:{b:[80,58,0],prop:`<rect x="56" y="92" width="48" height="10" rx="2" fill="#5a616c"/><path d="M118 60v-20M112 46l6 -6 6 6M42 66v-16M37 55l5 -5 5 5" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round" opacity=".8"/>`,arms:[[66,60,58,82,4],[94,60,102,82,-4]],legs:[[74,74,74,90,0],[86,74,86,90,0]],eq:DB(58,84)+DB(102,84)},
+ pushup:{b:[46,76,-10],arms:[[42,86,40,102,0],[52,86,54,102,0]],legs:[[64,82,134,98,-4],[64,86,132,102,-4]],eq:''},
+ lunge:{b:[78,62,0],arms:[[66,62,60,84,4],[92,62,98,84,-4]],legs:[[72,78,50,102,-16],[86,78,116,98,18]],eq:DB(60,86)+DB(98,86)},
+ raise:{b:[80,68,0],arms:[[66,60,34,56,-4],[94,60,126,56,4]],legs:[[72,86,64,102,6],[88,86,96,102,-6]],eq:DB(32,56)+DB(128,56)}
+};
+MPOSE.plank=MPOSE.pushup; MPOSE.other=MPOSE.ohp;
+function limb([x1,y1,x2,y2,bend],col,foot){
+  const mx=(x1+x2)/2,my=(y1+y2)/2,dx=x2-x1,dy=y2-y1,L=Math.hypot(dx,dy)||1,cx=mx-dy/L*bend,cy=my+dx/L*bend;
+  return `<path d="M${x1} ${y1}Q${cx} ${cy} ${x2} ${y2}" stroke="${col}" stroke-width="9" fill="none" stroke-linecap="round"/>`+
+   (foot?`<ellipse cx="${x2+(dx>=0?2:-2)}" cy="${y2-3}" rx="7" ry="4" fill="${col}"/>`:`<circle cx="${x2}" cy="${y2}" r="5" fill="${col}" stroke="rgba(0,0,0,.25)"/>`);
+}
+function mascot(type,st,pk,name){
+  const V=SPEC(name||'x',type), M={d:V.d}, P=MPOSE[pk]||MPOSE.ohp, [bx,by,br]=P.b;
+  const sweat=st>=1?`<path d="M${bx+26} ${by-24}q4 6 0 9q-4 -3 0 -9z" fill="#bfe9ff" stroke="#5aa9d6" stroke-width=".8"/>`:'';
+  const lines=`<path d="M${bx-34} ${by-30}l-8 -4M${bx+34} ${by-30}l8 -4M${bx-38} ${by-18}h-8" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".85"/>`;
+  return `<ellipse cx="${bx}" cy="103" rx="38" ry="5" fill="#000" opacity=".28"/>${P.prop||''}
+   ${P.legs.map(l=>limb(l,M.d,1)).join('')}
+   ${P.arms.filter(a=>a[3]<by-12).map(a=>limb(a,M.d,0)).join('')}
+   ${monBody(type,st,bx,by,br,FEAT(type,MON[type]||MON.other),V)}
+   ${P.arms.filter(a=>a[3]>=by-12).map(a=>limb(a,M.d,0)).join('')}${P.eq}${lines}${sweat}`;
+}
+function FEAT(type,M){return ({push:[`<path d="M-14 -22l-6 -14 12 8zM14 -22l6 -14 -12 8z" fill="${M.d}"/><path d="M24 10q14 0 12 -16q-4 8 -10 6z" fill="#ffc23a"/>`,`<path d="M-14 -22l-10 -20 14 10zM14 -22l10 -20 -14 10z" fill="${M.d}"/><path d="M24 8q18 -2 16 -22q-4 10 -12 8q6 -10 -2 -18q0 14 -6 16z" fill="#ffc23a"/>`,`<path d="M-14 -22l-12 -26 16 12zM14 -22l12 -26 -16 12z" fill="${M.d}"/><path d="M-24 -8q-34 -30 -30 8q10 -8 26 6zM24 -8q34 -30 30 8q-10 -8 -26 6z" fill="${M.d}" opacity=".9"/><path d="M24 8q22 -2 18 -28q-4 12 -12 8q6 -12 -2 -20q0 16 -6 18z" fill="#ffd85a"/>`],
+  pull:[`<path d="M-24 -6l-12 -8 4 14zM24 -6l12 -8 -4 14z" fill="${M.l}"/>`,`<path d="M-24 -6l-16 -12 4 18zM24 -6l16 -12 -4 18z" fill="${M.l}"/><path d="M-6 -26q6 -12 12 0z" fill="${M.d}"/>`,`<path d="M-24 -6l-20 -16 4 22zM24 -6l20 -16 -4 22z" fill="${M.l}"/><path d="M-10 -26q10 -20 20 0z" fill="${M.d}"/><path d="M-8 26q-6 12 2 16M8 26q6 12 -2 16" stroke="${M.d}" stroke-width="5" fill="none" stroke-linecap="round"/>`],
+  legs:[`<path d="M0 -26q-2 -12 -10 -14q8 0 10 8q2 -10 12 -10q-10 4 -12 16z" fill="#6fd36a" stroke="${M.d}"/>`,`<path d="M0 -26q-6 -18 -18 -18q14 -2 18 10q4 -14 18 -12q-14 4 -18 20z" fill="#6fd36a" stroke="${M.d}"/>`,`<path d="M-4 -26q-16 -20 -30 -14q16 -6 26 4M4 -26q16 -20 30 -14q-16 -6 -26 4M0 -26v-16" stroke="#6b4a2b" stroke-width="4" fill="none"/><circle cx="-30" cy="-40" r="8" fill="#6fd36a"/><circle cx="30" cy="-40" r="8" fill="#6fd36a"/><circle cx="0" cy="-44" r="10" fill="#ff8fb0"/>`],
+  other:[`<path d="M-14 -22l-4 -12 10 6zM14 -22l4 -12 -10 6z" fill="${M.d}"/>`,`<path d="M-14 -22l-6 -16 12 8zM14 -22l6 -16 -12 8z" fill="${M.d}"/>`,`<path d="M-14 -22l-8 -20 14 10zM14 -22l8 -20 -14 10z" fill="${M.d}"/><path d="M-6 -30l6 -10 6 10z" fill="#ffd447"/>`]})[type]||[]}
+/* รูปที่อัปโหลดเอง: การ์ดภาพเต็มใบใช้รูปตามระดับ การ์ดปกติใช้รูปตามร่าง */
+const artKey=(name,tier)=>FULLART.includes(tier)?name+'|'+tier:name+'|s'+stageOf(tier);
+function artImg(name,tier){const A=C.art||{};const id=A[artKey(name,tier)]||A[name+'|s'+stageOf(tier)];
+  return id&&/^https?:/.test(id)?`<img src="${esc(id)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block">`:''}
+async function putArt(key,file){
+  if(!SB||!UID)throw new Error('ต้องเข้าสู่ระบบก่อน');
+  const path=UID+'/'+key.replace(/[^A-Za-z0-9]+/g,'_')+'.'+((file.type.split('/')[1]||'png').replace('jpeg','jpg'));
+  const {error}=await SB.storage.from('art').upload(path,file,{upsert:true,contentType:file.type||'image/png'});
+  if(error)throw error;
+  C.art=C.art||{};C.art[key]=SB.storage.from('art').getPublicUrl(path).data.publicUrl+'?v='+Date.now();persist('settings');
+}
+async function uploadArt(key,file){
+  const st=document.getElementById('upst');
+  try{if(st)st.textContent='กำลังอัปโหลด...';await putArt(key,file);document.getElementById('ovl').innerHTML='';render();toast('เปลี่ยนรูปแล้ว')}
+  catch(e){if(st)st.textContent='อัปโหลดไม่สำเร็จ: '+(e.message||e)}
+}
+/* นำเข้ารูปจากโฟลเดอร์ Drive: ชื่อไฟล์ = ชื่อมอน[_ระดับ]_เลข.png */
+function keyFromFile(title){
+  const m=title.replace(/\.[a-z]+$/i,'').match(/^([A-Za-z]+)(?:_(AR|SR|SAR|UR))?_\d+$/);if(!m)return null;
+  const exs=[...allExercises(),'First Step','Iron Week','Unbreakable','Gym Legend'];
+  for(const ex of exs){const ty=['First Step','Iron Week','Unbreakable','Gym Legend'].includes(ex)?'other':exType(ex);const st=SPEC(ex,ty).names.indexOf(m[1]);
+    if(st>=0)return m[2]?ex+'|'+m[2]:ex+'|s'+st}
+  return null;
+}
+let DRV_MSG='',DRV_BUSY=false;
+async function bulkImport(files){
+  if(DRV_BUSY)return;DRV_BUSY=true;
+  const say=t=>{DRV_MSG=t;const s=document.getElementById('drvst');if(s)s.textContent=t};
+  const pick={},skipped=[];
+  [...files].forEach(f=>{const k=keyFromFile(f.name);if(!k){skipped.push(f.name);return}if(!pick[k]||f.lastModified>pick[k].lastModified)pick[k]=f});
+  const todo=Object.entries(pick);let ok=0,fail=0;
+  for(const [k,f] of todo){say(`กำลังอัปโหลด ${ok+fail+1}/${todo.length}: ${f.name}`);try{await putArt(k,f);ok++}catch(e){fail++}}
+  DRV_BUSY=false;render();toast(`อัปโหลดแล้ว ${ok} รูป`);
+  say(`เสร็จ: อัปโหลด ${ok} รูป${fail?` · พลาด ${fail} รูป`:''}${skipped.length?` · ชื่อไฟล์ไม่ตรงการ์ดไหน: ${skipped.join(', ')}`:''}`);
+}
+function art(name,type,tier){
+  const im=artImg(name,tier); if(im)return im;
+  const id='a'+(hash(name+tier)%999999), full=FULLART.includes(tier)?224:120, st=stageOf(tier);
+  const pk=type==='other'?(/Streak|Unbreak/.test(name)?'squat':'ohp'):poseOf(name);
+  const vig=`<radialGradient id="v${id}" cx="50%" cy="45%" r="75%"><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></radialGradient>`;
+  const light=`<radialGradient id="l${id}" cx="50%" cy="40%" r="50%"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>`;
+  const sp=(tier==='SR'||tier==='SAR')?Array.from({length:12},(_,i)=>{const h=hash(name+i);return `<path transform="translate(${h%160} ${(h>>8)%(full-20)}) scale(${.5+(h%5)/5})" d="M0 -6L1.5 -1.5 6 0 1.5 1.5 0 6 -1.5 1.5 -6 0 -1.5 -1.5Z" fill="#fff" opacity=".9"/>`}).join(''):'';
+  const dy=full>120?full*.5-70:0;
+  const M=MON[type]||MON.other;
+  const SC=sceneFor(name,type,id,full,dy);
+  const bg=tier==='SR'?`<rect width="160" height="${full}" fill="${M.m}"/>${Array.from({length:40},(_,i)=>`<path d="M${i*8-80} 0l${full} ${full}" stroke="${i%2?M.l:M.d}" stroke-width="3" opacity=".45"/>`).join('')}<circle cx="80" cy="${full*.45}" r="70" fill="#fff" opacity=".2"/>`
+    :tier==='SAR'?SC.body+Array.from({length:30},(_,i)=>{const h=hash(name+'p'+i);return `<circle cx="${h%160}" cy="${(h>>7)%full}" r="${4+h%10}" fill="${[M.l,'#fff','#ffd6f0'][h%3]}" opacity=".22"/>`}).join('')
+    :SC.body;
+  return `<svg viewBox="0 0 160 ${full}" preserveAspectRatio="xMidYMid slice"><defs>${vig}${light}${SC.defs}</defs>${bg}<ellipse cx="80" cy="${dy+56}" rx="70" ry="50" fill="url(#l${id})"/><g transform="translate(0 ${dy})">${mascot(type,st,pk,name)}</g>${sp}${SC.grain}<rect width="160" height="${full}" fill="url(#v${id})"/></svg>`;
+}
+function artOld2(name,type,tier){
+  const id='a'+(hash(name+tier)%999999), full=tier==='SAR'?224:120, st=stageOf(tier);
+  const sparks=(tier==='SR'||tier==='SAR')?Array.from({length:10},(_,i)=>{const h=hash(name+i);return `<path transform="translate(${h%160} ${(h>>8)%(full-20)}) scale(${.5+(h%5)/5})" d="M0 -6L1.5 -1.5 6 0 1.5 1.5 0 6 -1.5 1.5 -6 0 -1.5 -1.5Z" fill="#fff" opacity=".9"/>`}).join(''):'';
+  return `<svg viewBox="0 0 160 ${full}" preserveAspectRatio="xMidYMid slice">${scene(type,id,full)}${monster(type,st,tier==='SAR'?full*.42:72)}${sparks}</svg>`;
+}
+function artOld(name,type,tier){
+  const [a,b]=TYPECOL[type]||['#a46bff','#e4d2ff'], h=hash(name), id='g'+h%99999+tier;
+  const rays=tier==='SR'||tier==='SAR'?Array.from({length:12},(_,i)=>`<path d="M80 60 L${80+140*Math.cos(i*.5236)} ${60+140*Math.sin(i*.5236)} L${80+140*Math.cos(i*.5236+.2)} ${60+140*Math.sin(i*.5236+.2)}Z" fill="#fff" opacity=".18"/>`).join(''):'';
+  const peaks=Array.from({length:5},(_,i)=>`<circle cx="${(h>>(i*3))%160}" cy="${20+((h>>(i*2))%40)}" r="${6+(h>>i)%14}" fill="#fff" opacity=".25"/>`).join('');
+  const pk=type==='other'?null:poseOf(name);
+  if(pk){const g=`<g transform="translate(44,8) scale(1.6)" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">${POSES[pk].svg}</g>`;
+    return `<svg viewBox="0 0 160 120" preserveAspectRatio="xMidYMid slice"><defs><radialGradient id="${id}" cx="50%" cy="45%" r="75%"><stop offset="0" stop-color="${b}"/><stop offset="1" stop-color="${a}"/></radialGradient></defs><rect width="160" height="120" fill="url(#${id})"/>${rays}${peaks}${g}</svg>`}
+  const glyph={push:'<path d="M50 70h60M58 56v28M102 56v28M50 62v16M110 62v16" stroke="#fff" stroke-width="7" stroke-linecap="round"/><path d="M80 30l10 18h-20z" fill="#fff"/>',
+    pull:'<path d="M80 26v40M64 42l16-16 16 16" stroke="#fff" stroke-width="7" fill="none" stroke-linecap="round"/><path d="M48 84h64M56 74v20M104 74v20" stroke="#fff" stroke-width="7" stroke-linecap="round"/>',
+    legs:'<path d="M66 28v24l-10 30M94 28v24l10 30" stroke="#fff" stroke-width="8" fill="none" stroke-linecap="round"/><path d="M44 50h72" stroke="#fff" stroke-width="7" stroke-linecap="round"/>'}[type]||'<circle cx="80" cy="60" r="22" fill="none" stroke="#fff" stroke-width="7"/>';
+  return `<svg viewBox="0 0 160 120" preserveAspectRatio="xMidYMid slice"><defs><radialGradient id="${id}" cx="50%" cy="45%" r="75%"><stop offset="0" stop-color="${b}"/><stop offset="1" stop-color="${a}"/></radialGradient></defs><rect width="160" height="120" fill="url(#${id})"/>${rays}${peaks}<g transform="${tier==='SAR'?'translate(0,-10)':''}">${glyph}</g></svg>`;
+}
+const TYPE_TH={push:'ธาตุดัน',pull:'ธาตุดึง',legs:'ธาตุขา'};
+function cardHTML(c,big){
+  if(!c.got&&!big){const left=c.need-c.have;return `<button class="card locked" data-card="${esc(c.id)}"><div class="q">?</div><div style="font-weight:700">${c.tier}</div><div class="small">${esc(c.name)}</div><div class="small">อีก ${left} ครั้ง</div></button>`}
+  const tag=big?'div':'button', ty=MON[c.type]?c.type:'other', M=MON[ty], st=stageOf(c.tier), ti=TIERS.findIndex(t=>t[0]===c.tier);
+  const mon=SPEC(c.name,ty).names[st], en=`<span class="en">${M.sym[0]}</span>`, cost=st+1;
+  const sym={C:'●',U:'◆',R:'★',RR:'★★',AR:'☆',SR:'☆☆',SAR:'☆☆☆',UR:'★★★'}[c.tier];
+  const fa=FULLART.includes(c.tier)?' fa':'', exm=['RR','SR','SAR','UR'].includes(c.tier)?'<span class="exm">ex</span>':'';
+  const no=String((hash(c.name)%90)+10).padStart(3,'0');
+  return `<${tag} class="card r-${c.tier} ty-${ty}${fa}" data-card="${esc(c.id)}"><div class="in">
+    <div class="top"><span class="stg">${['พื้นฐาน','ร่าง 1','ร่าง 2'][st]}</span><span class="nm">${mon}${exm}</span><span class="hp num"><small>HP</small>${c.hp}</span>${en}</div>
+    <div class="art">${art(c.name,ty,c.tier)}</div>
+    <div class="meta">มอนสเตอร์ธาตุ${M.el} · ${TIERS[ti][2]} · สูงสุด ${c.atk}</div>
+    <div class="atk">${Array.from({length:cost},()=>en).join('')}<span class="an">${ty==='other'?esc(c.name):SPEC(c.name,ty).skill}</span><span class="dmg num">${parseFloat(c.atk)||c.need*10}</span></div>
+    <div class="flv">${ty==='other'?'':`ท่าจริง: <b>${esc(c.name)}</b> · `}${c.flavor}</div>
+    <div class="wrr"><span><b>จุดอ่อน</b>ความขี้เกียจ ×2</span><span><b>ต้านทาน</b>ข้ออ้าง −30</span><span><b>ถอย</b>${'●'.repeat(cost)}</span></div>
+    <div class="foot"><span>Illus. Rep Ledger</span><span class="num">${no}/100 <span class="rar">${sym}</span> ${c.tier}</span></div></div></${tag}>`;
+}
+function buildCards(){
+  const out=[]; const st=streak(), days=Object.keys(LOG).filter(doneDay).length;
+  allExercises().forEach(n=>{const have=exCount(n),type=exType(n),b=best(n,'');
+    TIERS.forEach(([t,need,label],i)=>out.push({id:n+'|'+t,group:n,name:n,tier:t,need,have,got:have>=need,type,
+      hp:Math.round(b*(1+i*.2))||need*10,sub:`${TYPE_TH[type]||'ธาตุพิเศษ'} · ${label}`,atkName:'ยกหนักสุด',atk:(b||0)+' kg',
+      flavor:i>=4?`เล่นท่านี้ครบ ${need} ครั้ง ${FLAVOR[hash(n)%FLAVOR.length]}`:`ปลดล็อกเมื่อเล่น ${n} ครบ ${need} ครั้ง`,foot:`${have}/${need} ครั้ง`}))});
+  [['First Step','C',1,days,'เข้ายิมครั้งแรก'],['Iron Week','R',7,st,'Streak 7 วัน'],['Unbreakable','SR',30,st,'Streak 30 วัน'],['Gym Legend','SAR',100,days,'เข้ายิมครบ 100 วัน']]
+   .forEach(([n,t,need,have,f])=>out.push({id:'m|'+n,group:'milestone',name:n,tier:t,need,have:Math.min(have,need),got:have>=need||C.seen.includes('m|'+n),type:'other',
+     hp:need*10,sub:'การ์ดความสำเร็จ',atkName:'Streak สูงสุด',atk:st+' วัน',flavor:f,foot:`${Math.min(have,need)}/${need}`}));
+  return out;
+}
+function checkNewCards(){
+  const fresh=buildCards().filter(c=>c.got&&!C.seen.includes(c.id));
+  if(!fresh.length)return;
+  fresh.forEach(c=>C.seen.push(c.id)); persist('settings');
+  const top=fresh.sort((a,b)=>TIERS.findIndex(t=>t[0]===b.tier)-TIERS.findIndex(t=>t[0]===a.tier))[0];
+  showCard(top,true,fresh.length);
+}
+const RCOL={C:'#c7ccd1',U:'#5fd18f',R:'#5d9bff',RR:'#ffd447',SR:'#ff7ad9',SAR:'#b98cff'};
+function cardBack(rc,tier){
+  const cx=126,cy=176, rays=Array.from({length:36},(_,i)=>{const a=i*10*Math.PI/180,b=a+.06;return `<path d="M${cx} ${cy}L${cx+300*Math.cos(a)} ${cy+300*Math.sin(a)}L${cx+300*Math.cos(b)} ${cy+300*Math.sin(b)}Z"/>`}).join('');
+  const swirl=Array.from({length:6},(_,i)=>`<path d="M${cx} ${cy}q${60} ${-90} ${150} ${-60}" transform="rotate(${i*60} ${cx} ${cy})" stroke="url(#bkG)" stroke-width="26" fill="none" opacity=".55" stroke-linecap="round"/>`).join('');
+  const stars=Array.from({length:40},(_,i)=>{const h=hash('s'+i);return `<circle cx="${h%252}" cy="${(h>>8)%352}" r="${(h%3)*.5+.4}" fill="#fff" opacity="${.3+(h%7)/10}"/>`}).join('');
+  return `<svg viewBox="0 0 252 352" aria-hidden="true"><defs>
+   <radialGradient id="bkBg" cx="50%" cy="50%" r="70%"><stop offset="0" stop-color="#3b6fe0"/><stop offset=".5" stop-color="#1a3a8f"/><stop offset="1" stop-color="#081638"/></radialGradient>
+   <linearGradient id="bkG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7fd4ff"/><stop offset="1" stop-color="#1b4fbf" stop-opacity="0"/></linearGradient>
+   <linearGradient id="bkGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff2b0"/><stop offset=".5" stop-color="#d6a537"/><stop offset="1" stop-color="#fff2b0"/></linearGradient>
+   <radialGradient id="bkOrb" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#fff"/><stop offset=".25" stop-color="${rc}"/><stop offset="1" stop-color="#111"/></radialGradient>
+   <path id="bkArc" d="M56 176a70 70 0 0 1 140 0"/><path id="bkArc2" d="M50 176a76 76 0 0 0 152 0"/></defs>
+   <rect width="252" height="352" fill="#0a1430"/>
+   <rect x="10" y="10" width="232" height="332" rx="12" fill="url(#bkBg)"/>
+   <g fill="#9fd0ff" opacity=".12">${rays}</g>
+   <g class="sw">${swirl}</g>${stars}
+   <circle cx="${cx}" cy="${cy}" r="92" fill="none" stroke="url(#bkGold)" stroke-width="3"/>
+   <circle cx="${cx}" cy="${cy}" r="84" fill="#0b1f55" opacity=".75" stroke="url(#bkGold)" stroke-width="1" stroke-dasharray="2 4"/>
+   <text font-family="Bricolage Grotesque,sans-serif" font-weight="800" font-size="17" letter-spacing="5" fill="url(#bkGold)"><textPath href="#bkArc" startOffset="50%" text-anchor="middle">REP LEDGER</textPath></text>
+   <text font-family="Bricolage Grotesque,sans-serif" font-weight="700" font-size="10" letter-spacing="4" fill="#cfe6ff"><textPath href="#bkArc2" startOffset="50%" text-anchor="middle">TRADING CARD GAME</textPath></text>
+   <g transform="translate(${cx} ${cy+10})">
+    <path d="M-22 -30a22 22 0 0 1 44 0" stroke="url(#bkGold)" stroke-width="9" fill="none"/>
+    <circle r="34" fill="url(#bkOrb)" stroke="url(#bkGold)" stroke-width="4"/>
+    <path d="M-34 0h68" stroke="url(#bkGold)" stroke-width="4"/>
+    <circle r="11" fill="#0b1f55" stroke="url(#bkGold)" stroke-width="4"/>
+    <text y="4" text-anchor="middle" font-family="Bricolage Grotesque,sans-serif" font-weight="800" font-size="${tier.length>2?8:10}" fill="#fff">${tier}</text>
+    <ellipse cx="-12" cy="-16" rx="9" ry="5" fill="#fff" opacity=".5" transform="rotate(-30 -12 -16)"/>
+   </g>
+   <g fill="url(#bkGold)">${[[30,30],[222,30],[30,322],[222,322]].map(([x,y])=>`<path transform="translate(${x} ${y})" d="M0 -10L3 -3 10 0 3 3 0 10 -3 3 -10 0 -3 -3Z"/>`).join('')}</g>
+   <rect x="10" y="10" width="232" height="332" rx="12" fill="none" stroke="url(#bkGold)" stroke-width="2"/>
+   <rect x="18" y="18" width="216" height="316" rx="8" fill="none" stroke="#cfe6ff" stroke-opacity=".3"/>
+  </svg>`;
+}
+function unlockFX(c,count,after){
+  const ti=TIERS.findIndex(t=>t[0]===c.tier), rc=RCOL[c.tier]||'#fff', sp=Math.max(.18,.5-ti*.06)+'s';
+  const ov=document.getElementById('ovl');
+  ov.innerHTML=`<div class="ov" role="dialog" aria-label="ปลดล็อกการ์ด"><div class="title">ปลดล็อกการ์ดใหม่!${count>1?` (${count} ใบ)`:''}</div>
+   <div class="flip wait" id="flip" style="--rc:${rc};--sp:${sp}" tabindex="0" role="button" aria-label="แตะเพื่อเปิดการ์ด"><div class="face back">${cardBack(rc,c.tier)}</div><div class="face front">${cardHTML(c,true)}</div></div>
+   <div class="hint" id="hint">แตะการ์ดเพื่อเปิด</div><button class="btn" id="ovclose" hidden>เก็บเข้าคลัง</button></div>`;
+  const f=document.getElementById('flip'); f.focus();
+  const open=()=>{if(f.classList.contains('open'))return;f.classList.remove('wait');f.classList.add('open');
+    const n=12+ti*14, cols=[rc,'#fff',ti>=4?'#8affef':rc,ti>=3?'#ffe27a':rc];
+    const b=document.createElement('div');b.className='burst';b.style.setProperty('--rc',rc);
+    b.innerHTML=(ti>=2?'<div class="rays"></div>':'')+(ti>=4?'<div class="flash"></div>':'')+Array.from({length:n},()=>{const a=Math.random()*6.283,r=120+Math.random()*(160+ti*40);
+      return `<i style="--c:${cols[Math.random()*4|0]};--x:${Math.cos(a)*r}px;--y:${Math.sin(a)*r}px;animation-delay:${Math.random()*.2}s"></i>`}).join('');
+    document.body.appendChild(b);setTimeout(()=>b.remove(),2600);
+    try{navigator.vibrate&&navigator.vibrate(ti>=4?[60,40,60,40,120]:[40])}catch(e){}
+    document.getElementById('hint').textContent=`${TIERS[ti][2]} · ${c.name}`;
+    const bt=document.getElementById('ovclose');bt.hidden=false;if(after)after(bt)};
+  f.onclick=open; f.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}};
+}
+function showCard(c,reveal,count){
+  if(reveal)return unlockFX(c,count);
+  document.getElementById('ovl').innerHTML=`<div class="ov" id="ovbg" role="dialog" aria-label="การ์ด ${esc(c.name)}">
+   ${reveal?`<div class="title">ได้การ์ดใหม่! ${c.tier}${count>1?` (+${count-1} ใบ)`:''}</div>`:''}
+   <div class="big ${reveal?'reveal':''}">${c.got?cardHTML(c,true):cardHTML({...c,got:true,flavor:'ยังไม่ปลดล็อก · '+c.flavor},true).replace('class="card','style="filter:grayscale(1) brightness(.6)" class="card')}</div>
+   ${!c.got?`<div class="title" style="font-size:16px">เล่นอีก ${c.need-c.have} ครั้งเพื่อปลดล็อก</div>`:''}
+   ${c.id==='x'||!c.name?'':`<div class="row wrapr" style="justify-content:center"><label class="btn ghost" style="color:#fff;border-color:#fff6">อัปโหลดรูปการ์ดนี้<input type="file" accept="image/*" hidden data-up="${esc(artKey(c.name,c.tier))}"></label>${(C.art||{})[artKey(c.name,c.tier)]?`<button class="btn ghost" style="color:#fff;border-color:#fff6" data-unart="${esc(artKey(c.name,c.tier))}">ใช้รูปเดิม</button>`:''}</div>
+   <div class="hint" id="upst" style="color:#cfd6e4;font-size:13px;text-align:center">${FULLART.includes(c.tier)?'รูปแนวตั้ง 3:4 · ใช้เฉพาะการ์ดระดับ '+c.tier:'รูปแนวนอน 4:3 · ใช้กับทุกการ์ดร่างเดียวกัน'}</div>`}
+   <button class="btn" id="ovclose">${reveal?'เก็บเข้าคลัง':'ปิด'}</button></div>`;
+  document.getElementById('ovclose').focus();
+}
+
+/* ---------- today ---------- */
+function todayLog(){const t=C.plan[today.getDay()]||'rest';
+  if(t==='rest'||!prog(t))return null;
+  const P=prog(t);
+  if(!LOG[TK]||LOG[TK].type!==t){
+    if(LOG[TK]&&doneDay(TK))return LOG[TK];
+    LOG[TK]={type:t,sets:P.ex.map(x=>{const p=prevEntry(x.n);return{n:x.n,target:x.r,s:Array.from({length:x.s},(_,i)=>({w:p?(p.e.s[i]||p.e.s[0]).w:'',r:x.r,ok:false}))}})};
+  }
+  return LOG[TK]}
+function ring(v,max){const r=40,c=2*Math.PI*r,p=Math.min(v/max,1);
+  return `<svg class="ring" viewBox="0 0 96 96" role="img" aria-label="เป้าสัปดาห์ ${v} จาก ${max}"><circle class="track" cx="48" cy="48" r="${r}"/><circle class="bar" cx="48" cy="48" r="${r}" stroke-dasharray="${c}" stroke-dashoffset="${c*(1-p)}" transform="rotate(-90 48 48)"/><text x="48" y="54" text-anchor="middle" font-size="20">${v}/${max}</text></svg>`}
+function nextCardFor(n){const have=exCount(n);const t=TIERS.find(([,need])=>need>have);return t?{tier:t[0],left:t[1]-have,need:t[1],have}:null}
+function vToday(){
+  const L=todayLog(), t=L?L.type:'rest', st=streak(), wd=weekDone();
+  const s0=new Date(today);s0.setDate(s0.getDate()-s0.getDay());
+  const week=DAYS.map((d,i)=>{const x=new Date(s0);x.setDate(s0.getDate()+i);const k=iso(x);
+    return `<div class="day ${doneDay(k)?'done':''} ${k===TK?'today':''} ${C.plan[i]==='rest'?'rest':''}">${d}<br>${x.getDate()}</div>`}).join('');
+  const done=L?L.sets.reduce((a,e)=>a+okSets(e).length,0):0, all=L?L.sets.reduce((a,e)=>a+e.s.length,0):0;
+  let nudge;
+  if(!L) nudge=`<div class="nudge ok">วันพัก ยืดเหยียด เดินเบาๆ แล้วนอนให้พอ Streak ไม่หาย</div>`;
+  else if(done===all) nudge=`<div class="nudge ok">ครบทุกเซ็ตแล้ว · Streak ${st} วัน</div>`;
+  else if(done>0) nudge=`<div class="nudge">เหลืออีก ${all-done} เซ็ต อย่าเพิ่งกลับบ้าน</div>`;
+  else nudge=`<div class="nudge">${st?`ถ้าวันนี้ไม่ไป Streak ${st} วันจะหาย · `:''}${QUOTES[today.getDate()%QUOTES.length]}</div>`;
+  const cards=L?L.sets.map((e,ei)=>{
+    const p=prevEntry(e.n), b=best(e.n), isPR=okSets(e).some(s=>+s.w>b&&b>0), ok=e.s.every(s=>s.ok), nc=nextCardFor(e.n);
+    const vNow=vol(e), vPrev=p?vol(p.e):0, diff=vNow-vPrev;
+    return `<section class="ex ${ok?'complete':''}">
+     <div class="exhead2"><button class="pose" data-pose="${esc(e.n)}" aria-label="ดูท่าตัวอย่าง ${esc(e.n)}">${poseSVG(poseOf(e.n))}</button>
+      <div style="min-width:0;flex:1"><div class="ex-name">${esc(e.n)} ${isPR?'<span class="pr">PR ใหม่</span>':''}</div><div class="muted small num">${e.s.length} เซ็ต × ${e.target} · แตะภาพเพื่อดูวิธีเล่น</div></div></div>
+     <div class="cmp num"><div><span class="muted">ครั้งก่อน ${p?thDate(p.d):''}</span><b>${p?vPrev.toLocaleString()+' kg':'ยังไม่มี'}</b></div>
+       <div><span class="muted">วันนี้</span><b>${vNow.toLocaleString()} kg ${p&&vNow?`<span class="${diff>=0?'up':'dn'} small">${diff>=0?'▲':'▼'}${Math.abs(diff).toLocaleString()}</span>`:''}</b></div></div>
+     <div class="sets"><div class="set muted small"><span class="idx">#</span><span style="text-align:center">ครั้งก่อน</span><span style="text-align:center">kg</span><span style="text-align:center">ครั้ง</span><span></span></div>
+     ${e.s.map((s,si)=>{const ps=p&&p.e.s[si];const better=ps&&s.ok&&(+s.w>+ps.w||(+s.w===+ps.w&&+s.r>+ps.r));
+       return `<div class="set"><span class="idx num">${si+1}</span><span class="prev">${ps?ps.w+'×'+ps.r:'–'}${better?'<br><span class="up">▲</span>':''}</span>
+       <input id="w${ei}_${si}" type="text" inputmode="decimal" value="${s.w}" data-e="${ei}" data-s="${si}" data-k="w" aria-label="น้ำหนักเซ็ต ${si+1}">
+       <input id="r${ei}_${si}" type="text" inputmode="numeric" value="${s.r}" data-e="${ei}" data-s="${si}" data-k="r" aria-label="จำนวนครั้งเซ็ต ${si+1}">
+       <button class="tick ${s.ok?'on':''}" data-tick="${ei}_${si}" aria-label="ทำเซ็ต ${si+1} เสร็จ">✓</button></div>`}).join('')}</div>
+     ${nc?`<div><div class="row between small"><span class="muted">การ์ด ${nc.tier} ของท่านี้</span><span class="num muted">อีก ${nc.left} ครั้ง</span></div><div class="prog"><i style="width:${nc.have/nc.need*100}%"></i></div></div>`:''}
+    </section>`}).join(''):'';
+  return `<header class="row between"><div><div class="eyebrow">${today.toLocaleDateString('th-TH',{weekday:'long',day:'numeric',month:'short'})}</div><h1>${esc(progName(t))}${L&&prog(t).sub?` <span class="muted" style="font-size:16px">${esc(prog(t).sub)}</span>`:''}</h1></div></header>
+  <div class="sync ${synced?'on':''}" id="sync"><i></i> ${synced?'ซิงก์ทุกเครื่องแล้ว':'เก็บในเครื่องนี้เท่านั้น'}</div>
+  <div class="hero">${ring(wd,C.weekGoal)}<div><div class="eyebrow">Streak</div><div class="streak num">${st} วัน</div><div class="muted">เป้าสัปดาห์นี้ ${wd}/${C.weekGoal} วัน</div></div></div>
+  <div class="week">${week}</div>${nudge}
+  ${L?`<div class="row between"><h2>ท่าวันนี้</h2><span class="muted num">${done}/${all} เซ็ต</span></div>${cards}`:''}`;
+}
+
+/* ---------- plan + custom programs ---------- */
+function vPlan(){
+  const keys=Object.keys(C.programs);
+  return `<div><div class="eyebrow">ตารางประจำสัปดาห์</div><h1>แผนการเล่น</h1></div>
+  <div class="list">${DAYS.map((d,i)=>`<div class="li"><b style="width:40px">${d}</b><select id="p${i}" data-day="${i}"><option value="rest" ${C.plan[i]==='rest'?'selected':''}>วันพัก</option>${keys.map(k=>`<option value="${k}" ${C.plan[i]===k?'selected':''}>${esc(C.programs[k].name)}</option>`).join('')}</select></div>`).join('')}</div>
+  <div class="row between"><b>เป้าหมายกี่วันต่อสัปดาห์</b><select id="goal" style="width:90px">${[2,3,4,5,6,7].map(n=>`<option ${C.weekGoal===n?'selected':''}>${n}</option>`).join('')}</select></div>
+  <div class="row between"><h2>โปรแกรมของผม</h2><button class="btn sm" id="addprog">+ โปรแกรมใหม่</button></div>
+  ${keys.map(k=>{const P=C.programs[k];return `<div class="ex">
+    <div class="row"><input id="pn_${k}" data-pname="${k}" value="${esc(P.name)}" style="flex:1;font-weight:700" aria-label="ชื่อโปรแกรม"><button class="x" data-delprog="${k}" aria-label="ลบโปรแกรม">×</button></div>
+    <input id="ps_${k}" data-psub="${k}" value="${esc(P.sub||'')}" placeholder="กล้ามเนื้อที่เล่น เช่น อก / ไหล่" aria-label="คำอธิบาย">
+    <div class="edrow wi muted small"><span>ภาพ</span><span>ท่า</span><span style="text-align:center">เซ็ต</span><span style="text-align:center">ครั้ง</span><span></span></div>
+    ${P.ex.map((x,i)=>`<div class="edrow wi"><button class="pose sm" data-cyc="${k}|${i}" aria-label="เปลี่ยนภาพท่า (ตอนนี้: ${POSES[poseOf(x.n,x.icon||poseOf(x.n,'_'))].th})">${poseSVG(x.icon&&POSES[x.icon]?x.icon:poseOf(x.n,'_'))}</button><input id="en_${k}_${i}" data-ed="${k}|${i}|n" value="${esc(x.n)}" aria-label="ชื่อท่า"><input id="es_${k}_${i}" type="number" min="1" data-ed="${k}|${i}|s" value="${x.s}" aria-label="จำนวนเซ็ต"><input id="er_${k}_${i}" type="number" min="1" data-ed="${k}|${i}|r" value="${x.r}" aria-label="จำนวนครั้ง"><button class="x" data-delex="${k}|${i}" aria-label="ลบท่า">×</button></div>`).join('')}
+    <button class="btn ghost sm" data-addex="${k}">+ เพิ่มท่า</button></div>`}).join('')}
+  <p class="muted small">ภาพท่าเลือกให้อัตโนมัติจากชื่อท่า (ภาษาอังกฤษ) ถ้าไม่ตรง แตะที่ภาพเพื่อเปลี่ยน</p>
+  <p class="muted small">เปลี่ยนชื่อท่าแล้ว ประวัติและการ์ดของชื่อเดิมยังอยู่ ไม่หาย</p>`;
+}
+
+/* ---------- card library ---------- */
+function vCards(){
+  const all=buildCards(), got=all.filter(c=>c.got).length;
+  const groups=['all','milestone',...allExercises()];
+  const shown=all.filter(c=>cardFilter==='all'||c.group===cardFilter);
+  const byTier=TIERS.map(([t])=>[t,all.filter(c=>c.tier===t&&c.got).length]);
+  return `<div><div class="eyebrow">สะสมแล้ว ${got} / ${all.length} ใบ</div><h1>คลังการ์ด</h1></div>
+  <div class="prog"><i style="width:${got/all.length*100}%"></i></div>
+  <div class="tiers">${byTier.map(([t,n])=>`<span class="tier ${n?'got':''}">${t} ×${n}</span>`).join('')}</div>
+  <div class="chips">${groups.map(g=>`<button class="chip" data-filter="${esc(g)}" aria-pressed="${cardFilter===g}">${g==='all'?'ทั้งหมด':g==='milestone'?'ความสำเร็จ':esc(g)}</button>`).join('')}</div>
+  <div class="cards">${shown.map(c=>cardHTML(c)).join('')}</div>
+  <div class="ex"><b>วิธีได้การ์ด</b><div class="list small">${TIERS.map(([t,n,l])=>`<div class="li"><span><span class="tier got">${t}</span> ${l}</span><span class="muted">เล่นท่านั้นครบ ${n} ครั้ง</span></div>`).join('')}</div>
+  <div class="muted small">นับ 1 ครั้งต่อวัน เมื่อติ๊กเสร็จอย่างน้อย 1 เซ็ต · การ์ด SR และ SAR มีเอฟเฟกต์ประกาย</div>
+  <button class="btn ghost sm" id="preview">ดูตัวอย่างการ์ดทุกระดับ</button></div>
+  <div class="ex"><b>อัปโหลดรูปการ์ดทีละหลายรูป</b><div class="muted small">เลือกรูปทั้งหมดได้ในครั้งเดียว แอปจับคู่กับการ์ดจากชื่อไฟล์ เช่น Igniso_123.png, Pyroking_SAR_456.png</div>
+  <label class="btn sm" style="text-align:center">${DRV_BUSY?'กำลังอัปโหลด...':'เลือกรูป'}<input type="file" id="bulkin" accept="image/*" multiple hidden ${DRV_BUSY?'disabled':''}></label><div class="small" id="drvst" aria-live="polite">${esc(DRV_MSG)}</div></div>
+  ${UID?'<button class="btn ghost sm" id="logout">ออกจากระบบ</button>':''}`;
+}
+
+/* ---------- progress ---------- */
+function vProgress(){
+  const names=allExercises(); const sel=names.includes(pick)?pick:names[0];
+  const pts=Object.keys(LOG).sort().map(d=>{const e=LOG[d].sets.find(x=>x.n===sel);return e&&okSets(e).length?{d,w:Math.max(...okSets(e).map(s=>+s.w||0)),v:vol(e)}:null}).filter(Boolean);
+  let chart='<p class="muted">ยังไม่มีข้อมูลท่านี้ เล่นแล้วติ๊กเซ็ตที่หน้า "วันนี้" กราฟจะขึ้นตรงนี้</p>';
+  if(pts.length){const W=320,H=160,pl=36,pb=22,mn=Math.min(...pts.map(p=>p.w)),mx=Math.max(...pts.map(p=>p.w)),lo=Math.floor(mn*.9),hi=Math.ceil(mx*1.05)||1;
+    const x=i=>pl+(pts.length>1?i*(W-pl-10)/(pts.length-1):(W-pl)/2),y=v=>10+(H-pb-10)*(1-(v-lo)/(hi-lo||1));
+    const line=pts.map((p,i)=>`${x(i)},${y(p.w)}`).join(' ');
+    chart=`<svg class="chart" viewBox="0 0 ${W} ${H}"><line x1="${pl}" x2="${W}" y1="${y(lo)}" y2="${y(lo)}" stroke="var(--line)"/><line x1="${pl}" x2="${W}" y1="${y(hi)}" y2="${y(hi)}" stroke="var(--line)" stroke-dasharray="3 3"/>
+    <text x="${pl-6}" y="${y(lo)+4}" text-anchor="end">${lo}</text><text x="${pl-6}" y="${y(hi)+4}" text-anchor="end">${hi}</text>
+    <polygon points="${x(0)},${y(lo)} ${line} ${x(pts.length-1)},${y(lo)}" fill="var(--accent-soft)"/><polyline points="${line}" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+    <circle cx="${x(pts.length-1)}" cy="${y(pts.at(-1).w)}" r="5" fill="var(--accent)"/>
+    <text x="${x(0)}" y="${H-4}">${thDate(pts[0].d)}</text><text x="${W}" y="${H-4}" text-anchor="end">${thDate(pts.at(-1).d)}</text></svg>
+    <div class="muted num">เริ่ม ${pts[0].w} kg → ล่าสุด ${pts.at(-1).w} kg (${pts.at(-1).w-pts[0].w>=0?'+':''}${pts.at(-1).w-pts[0].w} kg)</div>`}
+  const hist=pts.slice().reverse().slice(0,10).map((p,i,a)=>{const prev=a[i+1];const d=prev?p.v-prev.v:0;
+    return `<div class="li num"><span>${thDate(p.d)}</span><span>${p.w} kg สูงสุด</span><span class="muted">${p.v.toLocaleString()} kg ${prev?`<span class="${d>=0?'up':'dn'}">${d>=0?'▲':'▼'}</span>`:''}</span></div>`}).join('');
+  return `<div><div class="eyebrow">น้ำหนักสูงสุดต่อครั้ง</div><h1>พัฒนาการ</h1></div>
+  <select id="pick">${names.map(n=>`<option ${n===sel?'selected':''}>${esc(n)}</option>`).join('')}</select>${chart}
+  <h2>ประวัติท่านี้</h2><div class="muted small">Volume = น้ำหนัก × จำนวนครั้ง รวมทุกเซ็ต · ▲▼ เทียบกับครั้งก่อน</div><div class="list">${hist||'<p class="muted">ยังไม่มีประวัติ</p>'}</div>`;
+}
+
+/* ---------- wiring ---------- */
+const toast=m=>{const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2000)};
+function render(){if(!ready)return;document.getElementById('app').innerHTML={today:vToday,plan:vPlan,cards:vCards,progress:vProgress}[tab]();
+  document.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-current',b.dataset.tab===tab))}
+document.querySelector('nav').onclick=e=>{const b=e.target.closest('button');if(b){tab=b.dataset.tab;render();scrollTo(0,0)}};
+const app=document.getElementById('app');
+app.addEventListener('click',e=>{
+  const q=s=>e.target.closest(s);
+  let el;
+  if(el=q('[data-tick]')){const[ei,si]=el.dataset.tick.split('_').map(Number),ex=LOG[TK].sets[ei],s=ex.s[si];const b=best(ex.n);
+    s.ok=!s.ok;dirtyToday=true;persist(TK);render();
+    if(s.ok){toast(+s.w>b&&b>0?`PR ใหม่! ${s.w} kg`:'บันทึกเซ็ตแล้ว');checkNewCards()}}
+  else if(el=q('[data-pose]')){showPose(el.dataset.pose)}
+  else if(el=q('[data-cyc]')){const[k,i]=el.dataset.cyc.split('|');const x=C.programs[k].ex[i];const cur=x.icon&&POSES[x.icon]?x.icon:poseOf(x.n,'_');x.icon=POSE_KEYS[(POSE_KEYS.indexOf(cur)+1)%POSE_KEYS.length];persist('settings');render();toast('ภาพท่า: '+POSES[x.icon].th)}
+  else if(el=q('[data-card]')){const c=buildCards().find(x=>x.id===el.dataset.card);if(c)showCard(c,false)}
+  else if(el=q('[data-filter]')){cardFilter=el.dataset.filter;render()}
+  else if(el=q('#logout')){logout()}
+  else if(el=q('#preview')){const n='Bench Press';let i=0;const show=()=>{const[t,need,l]=TIERS[i];unlockFX({id:'x',name:n,tier:t,need,have:need,got:true,type:'push',hp:80+i*20,sub:'ธาตุดัน · '+l,atkName:'ยกหนักสุด',atk:'80 kg',flavor:'การ์ดตัวอย่าง',foot:'ตัวอย่าง'},1,bt=>{
+      bt.textContent=i<TIERS.length-1?'ถัดไป':'ปิด';bt.onclick=ev=>{ev.stopPropagation();i++;if(i<TIERS.length)show();else document.getElementById('ovl').innerHTML=''}})};show()}
+  else if(el=q('#addprog')){const k='p'+Date.now().toString(36);C.programs[k]={name:'โปรแกรมใหม่',sub:'',ex:[{n:'ท่าใหม่',s:3,r:10}]};persist('settings');render()}
+  else if(el=q('[data-delprog]')){const k=el.dataset.delprog;if(el.dataset.confirm){delete C.programs[k];for(const d in C.plan)if(C.plan[d]===k)C.plan[d]='rest';persist('settings');render()}else{el.dataset.confirm=1;el.textContent='ลบ?';el.style.fontSize='14px'}}
+  else if(el=q('[data-addex]')){C.programs[el.dataset.addex].ex.push({n:'ท่าใหม่',s:3,r:10});persist('settings');render()}
+  else if(el=q('[data-delex]')){const[k,i]=el.dataset.delex.split('|');C.programs[k].ex.splice(+i,1);persist('settings');render()}
+});
+app.addEventListener('change',e=>{const d=e.target.dataset,v=e.target.value;
+  if(e.target.id==='bulkin'){bulkImport(e.target.files);return}
+  if(d.k){LOG[TK].sets[d.e].s[d.s][d.k]=+v||0;dirtyToday=true;persist(TK)}
+  else if(d.day){C.plan[d.day]=v;persist('settings');toast('บันทึกแผนแล้ว')}
+  else if(e.target.id==='goal'){C.weekGoal=+v;persist('settings')}
+  else if(e.target.id==='pick'){pick=v;render()}
+  else if(d.pname){C.programs[d.pname].name=v||'ไม่มีชื่อ';persist('settings')}
+  else if(d.psub!==undefined){C.programs[d.psub].sub=v;persist('settings')}
+  else if(d.ed){const[k,i,f]=d.ed.split('|');C.programs[k].ex[i][f]=f==='n'?(v.trim()||'ท่าใหม่'):Math.max(1,+v||1);persist('settings')}
+});
+document.getElementById('ovl').addEventListener('click',e=>{if(e.target.id==='ovclose'||e.target.id==='ovbg')document.getElementById('ovl').innerHTML='';
+  const u=e.target.closest('[data-unart]');if(u){delete C.art[u.dataset.unart];persist('settings');document.getElementById('ovl').innerHTML='';render();toast('กลับไปใช้รูปเดิมแล้ว')}});
+document.getElementById('ovl').addEventListener('change',e=>{const k=e.target.dataset.up;if(k&&e.target.files[0])uploadArt(k,e.target.files[0])});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('ovl').innerHTML=''});
+boot();
+</script>
+
+<script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
+</body></html>

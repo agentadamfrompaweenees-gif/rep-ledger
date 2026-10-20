@@ -227,6 +227,8 @@ body.gamebg h1{color:#fff}
 .stack .sc .card{height:100%;font-size:clamp(10px,3.3vw,15px);cursor:pointer}
 .stack .sc.top{animation:pop .5s cubic-bezier(.2,1.4,.4,1)}
 .stack .sc.fly{transform:translate(-120%,-10%) rotate(-25deg);opacity:0}
+#ptr{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) - 30px);transform:translate(-50%,0);opacity:0;z-index:70;width:40px;height:40px;border-radius:50%;background:var(--surface);color:var(--accent);box-shadow:0 2px 10px rgba(0,0,0,.3);display:grid;place-items:center;font-size:20px;font-weight:800;transition:opacity .2s}
+#ptr span{transition:transform .2s;display:block}#ptr.ready span{transform:rotate(180deg)}#ptr.spin span{animation:spin .7s linear infinite}
 @keyframes pop{0%{transform:rotateY(90deg) scale(.6);opacity:0}100%{transform:none;opacity:1}}
 nav{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);z-index:20}
 nav .in{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);align-items:end}
@@ -976,7 +978,7 @@ function vPack(){const all=getPool().map(poolCard),got=all.filter(c=>c.got).leng
 function vSettings(){return vPlan()+`<h2>การ์ด</h2>${forgeBox()}
   <div class="ex"><b>อัปโหลดรูปการ์ดทีละหลายรูป</b><div class="muted small">เลือกรูปทั้งหมดได้ในครั้งเดียว แอปจับคู่กับการ์ดจากชื่อไฟล์ เช่น Igniso_123.png, Pyroking_SAR_456.png</div>
   <label class="btn sm" style="text-align:center">${DRV_BUSY?'กำลังอัปโหลด...':'เลือกรูป'}<input type="file" id="bulkin" accept="image/*" multiple hidden ${DRV_BUSY?'disabled':''}></label><div class="small" id="drvst" aria-live="polite">${esc(DRV_MSG)}</div></div>
-  ${UID?'<button class="btn ghost sm" id="logout">ออกจากระบบ</button>':''}<div class="ex"><b>ซองการ์ด</b><div class="row between"><label for="packcost">ราคาเปิดซอง (coin)</label><input id="packcost" type="number" min="0" step="10" value="${packCost()}" style="width:100px"></div><div class="muted small">ตั้งเป็น 0 = เปิดฟรีไม่จำกัด · coin ตอนนี้ ${(C.coins||0).toLocaleString()}</div></div><div class="muted small" style="text-align:center">เวอร์ชัน 10</div>`}
+  ${UID?'<button class="btn ghost sm" id="logout">ออกจากระบบ</button>':''}<div class="ex"><b>ซองการ์ด</b><div class="row between"><label for="packcost">ราคาเปิดซอง (coin)</label><input id="packcost" type="number" min="0" step="10" value="${packCost()}" style="width:100px"></div><div class="muted small">ตั้งเป็น 0 = เปิดฟรีไม่จำกัด · coin ตอนนี้ ${(C.coins||0).toLocaleString()}</div></div><div class="muted small" style="text-align:center">เวอร์ชัน 11</div>`}
 function vCards(){
   if(cardView==='pack')return vPack();
   const all=buildCards(), got=all.filter(c=>c.got).length;
@@ -1111,5 +1113,16 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementB
 boot();
 </script>
 
+<script>
+/* ดึงลงเพื่อรีเฟรช: ลากจากบนสุดลงมาแล้วปล่อย → โหลดแอปใหม่ (ได้ข้อมูลและเวอร์ชันล่าสุด) */
+(()=>{const ind=document.createElement('div');ind.id='ptr';ind.innerHTML='<span>↓</span>';document.body.appendChild(ind);
+  let y0=null,dy=0;const TH=80;
+  addEventListener('touchstart',e=>{if(scrollY>0||document.getElementById('ovl').innerHTML||e.target.closest('#pack2,#stack,input,textarea,select')){y0=null;return}y0=e.touches[0].clientY;dy=0},{passive:true});
+  addEventListener('touchmove',e=>{if(y0==null)return;dy=Math.max(0,e.touches[0].clientY-y0);if(scrollY>0){y0=null;dy=0}
+    const d=Math.min(dy*.5,TH+20);ind.style.transform=`translate(-50%,${d}px)`;ind.style.opacity=Math.min(1,dy/TH);ind.classList.toggle('ready',dy>TH*1.6)},{passive:true});
+  addEventListener('touchend',()=>{if(y0==null)return;if(dy>TH*1.6){ind.classList.add('spin');ind.innerHTML='<span>⟳</span>';setTimeout(()=>location.reload(),250)}
+    else{ind.style.transform='translate(-50%,0)';ind.style.opacity=0}y0=null;dy=0});
+})();
+</script>
 <script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
 </body></html>

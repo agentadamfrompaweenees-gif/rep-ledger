@@ -1,0 +1,50 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:Sr;src:url(noto-serif-thai-latin-600-normal.woff2)}@font-face{font-family:Sr;src:url(noto-serif-thai-thai-600-normal.woff2)}
+@font-face{font-family:Cg;src:url(cormorant-garamond-latin-600-normal.woff2)}
+@font-face{font-family:An;src:url(anuphan-thai-400-normal.woff2)}@font-face{font-family:An;src:url(anuphan-latin-400-normal.woff2)}
+body{margin:0;background:#fff}#m{position:relative;width:1400px;height:820px;border-radius:36px;overflow:hidden}
+canvas{position:absolute;inset:0;width:1400px;height:820px}
+.z{position:absolute;border-radius:28px;background:linear-gradient(180deg,rgba(255,255,255,.42),rgba(255,255,255,.18));backdrop-filter:blur(3px) saturate(1.2);
+border:1.5px solid rgba(255,255,255,.75);box-shadow:0 14px 30px rgba(40,70,140,.22),inset 0 2px 0 rgba(255,255,255,.8),inset 0 -6px 18px rgba(60,90,170,.12);color:#2B4580}
+.z::after{content:"";position:absolute;inset:12px;border-radius:18px;border:1.2px dashed rgba(255,255,255,.65)}
+.t{font-family:Sr;font-size:34px;text-shadow:0 0 12px rgba(255,255,255,.9),0 0 3px #fff;position:absolute;left:36px;top:26px}
+.s{font-family:An;font-size:18px;opacity:.95;text-shadow:0 0 8px #fff,0 0 2px #fff;position:absolute;left:38px;top:76px}
+.c .t,.c .s{left:0;right:0;text-align:center}
+.pill{position:absolute;right:30px;top:30px;font-family:An;font-size:16px;padding:5px 14px;border-radius:99px;background:rgba(255,255,255,.55);color:#3f5f9e}
+.sig{position:absolute;left:850px;top:36px;width:510px;height:150px;text-align:center;color:#2B4580;text-shadow:0 0 14px #fff,0 0 4px #fff}
+.sig b{display:block;font-family:Cg;font-size:58px;letter-spacing:10px;font-weight:600;margin-top:28px;font-variant-numeric:lining-nums}
+.sig i{display:block;font-family:Cg;font-style:normal;font-size:17px;letter-spacing:4px;white-space:nowrap;opacity:.95;border-top:1px solid rgba(255,255,255,.7);margin:6px 60px 0;padding-top:8px}
+</style></head><body><div id="m"><canvas id="c" width="2800" height="1640"></canvas>
+<div class="z" style="left:40px;top:36px;width:520px;height:150px"><div class="t">Construct Zone</div><div class="s">มี Construct บนสนามได้สูงสุด 4 ใบ</div><div class="pill">MAX 4</div></div>
+<div class="z c" style="left:590px;top:36px;width:230px;height:150px"><div class="t" style="font-size:30px;top:34px">Land Magic</div></div>
+<div class="sig"><b>SN4PTSHOT</b><i>“ A JOURNEY BEYOND THE END ”</i></div>
+<div class="z c" style="left:40px;top:216px;width:200px;height:568px"><div class="t">Life</div><div class="s">กองไลฟ์</div></div>
+<div class="z" style="left:270px;top:216px;width:850px;height:274px"><div class="t">Avatar Zone</div><div class="s">มี Avatar บนสนามได้สูงสุด 4 ใบ</div><div class="pill">MAX 4</div></div>
+<div class="z" style="left:270px;top:510px;width:850px;height:274px"><div class="t">Magic Zone</div><div class="s">สามารถเล่น Magic ได้ทุกประเภท</div></div>
+<div class="z c" style="left:1150px;top:216px;width:210px;height:274px"><div class="t">Hell</div><div class="s">นรก</div></div>
+<div class="z c" style="left:1150px;top:510px;width:210px;height:274px"><div class="t">Deck</div><div class="s">กองการ์ด</div></div>
+</div><script>
+const P={day:{sky:['#5FA3E6','#9CCBF2','#DDEFFC'],rim:'#FFE3B8',rim2:'#FFC9D6',fl:[215,75,68],slope:.32},
+gold:{sky:['#6D9FE0','#B9D2F2','#FCE6CF'],rim:'#FFD08A',rim2:'#FFB0B8',fl:[218,70,66],slope:.26},
+dusk:{sky:['#3B5DAA','#8AA4DE','#E8C9E6'],rim:'#FFC4A0',rim2:'#E7A6E0',fl:[226,62,62],slope:.3}}[location.search.slice(1)||'day'];
+const c=document.getElementById('c').getContext('2d');c.scale(2,2);const W=1400,H=820;let s=7;const R=()=>(s=(s*16807)%2147483647)/2147483647;
+let g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,P.sky[0]);g.addColorStop(.45,P.sky[1]);g.addColorStop(.7,P.sky[2]);c.fillStyle=g;c.fillRect(0,0,W,H);
+function cloud(x,y,sc){for(let i=0;i<46;i++){const dx=(R()-.5)*260*sc,dy=-Math.abs(R()*120*sc)+(R()*30),r=(30+R()*60)*sc;
+ const gg=c.createRadialGradient(x+dx-r*.3,y+dy-r*.4,r*.1,x+dx,y+dy,r);gg.addColorStop(0,'rgba(255,255,255,.95)');gg.addColorStop(.6,'rgba(255,250,245,.75)');gg.addColorStop(1,'rgba(255,255,255,0)');
+ c.fillStyle=gg;c.beginPath();c.arc(x+dx,y+dy,r,0,7);c.fill();}
+ for(let i=0;i<18;i++){const dx=(R()-.5)*240*sc,dy=R()*20*sc,r=(25+R()*45)*sc;const gg=c.createRadialGradient(x+dx,y+dy,0,x+dx,y+dy,r);
+ gg.addColorStop(0,i%2?P.rim+'cc':P.rim2+'aa');gg.addColorStop(1,'rgba(255,255,255,0)');c.fillStyle=gg;c.beginPath();c.arc(x+dx,y+dy,r,0,7);c.fill();}}
+cloud(1150,330,1.5);cloud(250,250,1.1);cloud(700,160,.7);cloud(80,430,.8);cloud(1350,120,.6);
+const hy=x=>520-P.slope*x*.35+Math.sin(x/220)*14; // horizon
+c.beginPath();c.moveTo(0,H);for(let x=0;x<=W;x+=10)c.lineTo(x,hy(x));c.lineTo(W,H);c.closePath();
+g=c.createLinearGradient(0,380,0,H);g.addColorStop(0,'#CFE2FA');g.addColorStop(.3,'#8FB6EE');g.addColorStop(1,'#4F78C8');c.fillStyle=g;c.fill();
+function flower(x,y,r,h,sa,l){c.save();c.translate(x,y);c.scale(1,.62+R()*.2);c.rotate(R()*7);
+ for(let k=0;k<5;k++){c.rotate(1.2566);const gg=c.createRadialGradient(0,-r*.55,0,0,-r*.5,r*.6);gg.addColorStop(0,`hsl(${h},${sa}%,${l+18}%)`);gg.addColorStop(1,`hsl(${h},${sa}%,${l-4}%)`);
+ c.fillStyle=gg;c.beginPath();c.ellipse(0,-r*.5,r*.42,r*.55,0,0,7);c.fill();c.strokeStyle=`hsla(${h},60%,35%,.25)`;c.lineWidth=.6;c.stroke();}
+ c.fillStyle='#fff';c.beginPath();c.arc(0,0,r*.2,0,7);c.fill();c.fillStyle='#F3D36B';c.beginPath();c.arc(0,0,r*.08,0,7);c.fill();c.restore();}
+for(let i=0;i<5200;i++){const t=Math.pow(R(),1.6),x=R()*W,top=hy(x),y=top+(H+40-top)*t,d=(y-top)/(H-top+1);
+ const r=2.5+d*30+d*d*20+R()*d*8;const[h,sa,l]=P.fl;flower(x,y,r,h+(R()-.5)*14,sa,l-8+R()*22+(1-d)*14);}
+for(let i=0;i<70;i++){const x=R()*W,y=R()*H*.85,r=3+R()*9;c.save();c.translate(x,y);c.rotate(R()*7);c.globalAlpha=.35+R()*.45;
+ c.fillStyle=`hsl(${P.fl[0]},70%,${70+R()*15}%)`;c.beginPath();c.ellipse(0,0,r*.6,r,0,0,7);c.fill();c.restore();}
+for(let i=0;i<40;i++){const x=R()*W,y=R()*H,r=4+R()*14;const gg=c.createRadialGradient(x,y,0,x,y,r);gg.addColorStop(0,'rgba(255,255,255,.7)');gg.addColorStop(1,'rgba(255,255,255,0)');c.fillStyle=gg;c.beginPath();c.arc(x,y,r,0,7);c.fill();}
+</script></body></html>

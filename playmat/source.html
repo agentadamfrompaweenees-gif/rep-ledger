@@ -14,16 +14,18 @@ border:1.5px solid rgba(255,255,255,.75);box-shadow:0 14px 30px rgba(40,70,140,.
 .sig{position:absolute;left:850px;top:36px;width:510px;height:150px;text-align:center;color:#2B4580;text-shadow:0 0 14px #fff,0 0 4px #fff}
 .sig b{display:block;font-family:Cg;font-size:58px;letter-spacing:10px;font-weight:600;margin-top:28px;font-variant-numeric:lining-nums}
 .sig i{display:block;font-family:Cg;font-style:normal;font-size:17px;letter-spacing:4px;white-space:nowrap;opacity:.95;border-top:1px solid rgba(255,255,255,.7);margin:6px 60px 0;padding-top:8px}
+.lab{position:absolute;transform:translate(-50%,-50%);font-family:Sr;font-size:23px;color:#2B4580;padding:2px 24px 5px;border-radius:16px;
+background:linear-gradient(180deg,rgba(255,255,255,.92),rgba(235,243,255,.85));border:1.5px solid #fff;box-shadow:0 6px 14px rgba(40,70,140,.25);white-space:nowrap}
+.lab small{display:block;font-family:An;font-size:15px;text-align:center;margin-top:-4px;color:#5a73a8}
+.bd{position:absolute;font-family:An;font-size:13px;color:#2B4580;background:rgba(255,255,255,.85);border:1.5px solid #fff;border-radius:12px;padding:4px 10px;text-align:center;line-height:1.1;box-shadow:0 4px 10px rgba(40,70,140,.2)}
+.bd b{display:block;font-family:Sr;font-size:24px}
+.ic{position:absolute;width:52px;height:52px;border-radius:14px;background:rgba(255,255,255,.8);border:1.5px solid #fff;display:grid;place-items:center;box-shadow:0 4px 10px rgba(40,70,140,.2)}
+.dd{background:radial-gradient(circle at 50% 45%,rgba(60,40,120,.75),rgba(90,70,170,.35) 60%,rgba(255,255,255,.15));}
+.dd .t2{color:#fff;text-shadow:0 0 10px #b9a3ff,0 0 3px #fff}
+.t2{position:absolute;left:0;right:0;text-align:center;font-family:Sr;color:#2B4580;text-shadow:0 0 12px #fff,0 0 3px #fff}
+.sig2{position:absolute;text-align:center;font-family:Cg;color:#2B4580;text-shadow:0 0 14px #fff,0 0 4px #fff;font-variant-numeric:lining-nums}
 </style></head><body><div id="m"><canvas id="c" width="2800" height="1640"></canvas>
-<div class="z" style="left:40px;top:36px;width:520px;height:150px"><div class="t">Construct Zone</div><div class="s">มี Construct บนสนามได้สูงสุด 4 ใบ</div><div class="pill">MAX 4</div></div>
-<div class="z c" style="left:590px;top:36px;width:230px;height:150px"><div class="t" style="font-size:30px;top:34px">Land Magic</div></div>
-<div class="sig"><b>SN4PTSHOT</b><i>“ A JOURNEY BEYOND THE END ”</i></div>
-<div class="z c" style="left:40px;top:216px;width:200px;height:568px"><div class="t">Life</div><div class="s">กองไลฟ์</div></div>
-<div class="z" style="left:270px;top:216px;width:850px;height:274px"><div class="t">Avatar Zone</div><div class="s">มี Avatar บนสนามได้สูงสุด 4 ใบ</div><div class="pill">MAX 4</div></div>
-<div class="z" style="left:270px;top:510px;width:850px;height:274px"><div class="t">Magic Zone</div><div class="s">สามารถเล่น Magic ได้ทุกประเภท</div></div>
-<div class="z c" style="left:1150px;top:216px;width:210px;height:274px"><div class="t">Hell</div><div class="s">นรก</div></div>
-<div class="z c" style="left:1150px;top:510px;width:210px;height:274px"><div class="t">Deck</div><div class="s">กองการ์ด</div></div>
-</div><script>
+<div id="ui"></div></div><script>
 const P={day:{sky:['#5FA3E6','#9CCBF2','#DDEFFC'],rim:'#FFE3B8',rim2:'#FFC9D6',fl:[215,75,68],slope:.32},
 gold:{sky:['#6D9FE0','#B9D2F2','#FCE6CF'],rim:'#FFD08A',rim2:'#FFB0B8',fl:[218,70,66],slope:.26},
 dusk:{sky:['#3B5DAA','#8AA4DE','#E8C9E6'],rim:'#FFC4A0',rim2:'#E7A6E0',fl:[226,62,62],slope:.3}}[location.search.slice(1)||'day'];
@@ -47,4 +49,37 @@ for(let i=0;i<5200;i++){const t=Math.pow(R(),1.6),x=R()*W,top=hy(x),y=top+(H+40-
 for(let i=0;i<70;i++){const x=R()*W,y=R()*H*.85,r=3+R()*9;c.save();c.translate(x,y);c.rotate(R()*7);c.globalAlpha=.35+R()*.45;
  c.fillStyle=`hsl(${P.fl[0]},70%,${70+R()*15}%)`;c.beginPath();c.ellipse(0,0,r*.6,r,0,0,7);c.fill();c.restore();}
 for(let i=0;i<40;i++){const x=R()*W,y=R()*H,r=4+R()*14;const gg=c.createRadialGradient(x,y,0,x,y,r);gg.addColorStop(0,'rgba(255,255,255,.7)');gg.addColorStop(1,'rgba(255,255,255,0)');c.fillStyle=gg;c.beginPath();c.arc(x,y,r,0,7);c.fill();}
+
+const X=r=>40+r*1320/900,Y=r=>30+r*760/530,ui=document.getElementById('ui');
+function zone(x,y,w,hh,cls=''){const d=document.createElement('div');d.className='z '+cls;Object.assign(d.style,{left:X(x)+'px',top:Y(y)+'px',width:(X(x+w)-X(x))+'px',height:(Y(y+hh)-Y(y))+'px'});ui.appendChild(d);return d}
+function add(html){ui.insertAdjacentHTML('beforeend',html)}
+const ST='fill="none" stroke="#2B4580" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"';
+// Construct
+zone(18,17,310,140);add(`<div class="lab" style="left:${X(173)}px;top:${Y(157)}px">Construct</div>`);
+add(`<div class="bd" style="left:${X(26)}px;top:${Y(24)}px">COST<b>3</b></div>`);
+add(`<div class="bd" style="left:${X(272)}px;top:${Y(108)}px">PENALTY<b>?</b></div>`);
+// Land
+zone(354,17,184,123);add(`<div class="lab" style="left:${X(446)}px;top:${Y(140)}px">Land</div>`);
+add(`<svg style="position:absolute;left:${X(366)}px;top:${Y(26)}px" width="70" height="40"><path d="M4 34 L24 8 34 20 44 10 66 34Z" fill="#fff" stroke="#2B4580" stroke-width="2.4" stroke-linejoin="round"/></svg>`);
+// signature center
+add(`<svg style="position:absolute;left:${X(585)-34}px;top:${Y(28)}px" width="68" height="60"><circle cx="34" cy="34" r="20" ${ST}/><circle cx="34" cy="34" r="15" fill="none" stroke="#2B4580" stroke-width="1"/><path d="M28 13 l6-9 6 9 -6 5z" fill="#cfe0ff" stroke="#2B4580" stroke-width="1.6"/></svg>`);
+add(`<div class="sig2" style="left:${X(548)}px;top:${Y(78)}px;width:${X(705)-X(548)-10}px;font-size:34px;letter-spacing:4px">SN4PTSHOT</div><div class="sig2" style="left:${X(548)}px;top:${Y(78)+44}px;width:${X(705)-X(548)-10}px;font-size:11px;letter-spacing:1.5px;white-space:nowrap">A JOURNEY BEYOND THE END</div>`);
+// Dark dimension
+const dd=zone(705,13,170,82,'dd');dd.innerHTML='<div class="t2" style="top:22px;font-size:26px">Dark Dimension</div><div class="t2" style="top:62px;font-family:An;font-size:16px">มิติมืด</div>';
+// Life
+zone(15,180,155,325);add(`<div class="lab" style="left:${X(92)}px;top:${Y(197)}px;font-size:20px">Life Card</div><div class="t2" style="left:${X(15)}px;right:auto;width:${X(170)-X(15)}px;top:${Y(480)}px;font-family:An;font-size:16px">กองไลฟ์</div>`);
+// Avatar
+zone(200,175,520,155);add(`<div class="lab" style="left:${X(460)}px;top:${Y(330)}px">Avatar</div>`);
+add(`<div class="bd" style="left:${X(207)}px;top:${Y(182)}px">COST<b>4</b></div><div class="bd" style="left:${X(207)}px;top:${Y(272)}px">POWER<b>∞</b></div>`);
+add(`<div class="pill" style="position:absolute;left:${X(650)}px;top:${Y(186)}px">MAX 4</div>`);
+// Magic
+zone(198,348,530,155);add(`<div class="lab" style="left:${X(463)}px;top:${Y(503)}px">Magic</div>`);
+const ics=[`<path d="M26 8C28 20 32 24 44 26 32 28 28 32 26 44 24 32 20 28 8 26 20 24 24 20 26 8Z" fill="#2B4580"/>`,
+`<path d="M14 40 L30 24" ${ST} stroke-width="5"/><path d="M30 24 a9 9 0 1 1 6 -14 l-6 6 2 4 4 2 6-6 a9 9 0 0 1 -12 8" ${ST}/>`,
+`<path d="M16 32 A12 12 0 1 1 34 36" ${ST} stroke-width="3.5"/><path d="M10 26 L16 34 24 28" ${ST} stroke-width="3.5"/>`];
+ics.forEach((p,i)=>add(`<div class="ic" style="left:${X(206)}px;top:${Y(358+i*46)}px"><svg width="52" height="52">${p}</svg></div>`));
+// Hell
+const he=zone(750,190,125,140);he.innerHTML='<div class="t2" style="top:34%;font-size:32px">Hell</div><div class="t2" style="top:56%;font-family:An;font-size:17px">นรก</div>';
+// Deck
+const de=zone(760,343,112,157);de.innerHTML='<div class="t2" style="top:36%;font-size:32px">Deck</div><div class="t2" style="top:58%;font-family:An;font-size:17px">กองการ์ด</div>';
 </script></body></html>
